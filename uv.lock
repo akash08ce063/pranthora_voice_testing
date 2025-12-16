@@ -15,16 +15,22 @@ name = "agent-to-agent-testing"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "fastapi" },
     { name = "fixa-dev" },
     { name = "ngrok" },
+    { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "fastapi", specifier = ">=0.115.14" },
     { name = "fixa-dev", specifier = ">=0.0.4" },
     { name = "ngrok", specifier = ">=1.4.0" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "uvicorn", specifier = ">=0.34.3" },
 ]
 
 [[package]]

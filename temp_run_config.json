@@ -3,14 +3,14 @@
 	"agents": [
 		{
 			"name": "TestAgent",
-			"prompt": "You are a helpful assistant. Say hello and goodbye. Then immediately hang up the call.",
+			"prompt": "Say hello and goodbye. Wait for a response.TWhen the response finishes, do not respond. Hang up the call after you get a response.",
 			"voice_id": "b7d50908-b17c-442d-ad8d-810c63997ed9"
 		}
 	],
 	"scenarios": [
 		{
 			"name": "TestScenario",
-			"prompt": "You are a helpful assistant. Call the user.",
+			"prompt": "Call the user.",
 			"evaluations": []
 		}
 	]
