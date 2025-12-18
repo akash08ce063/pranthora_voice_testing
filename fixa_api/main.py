@@ -210,18 +210,40 @@ def make_serializable(res: Any) -> TestResultModel:
     if not transcript:
         transcript = []
 
-    evals = getattr(res, "evaluations", {}) or {}
-    print(f"DEBUG: res.evaluations type: {type(evals)}")
-    print(f"DEBUG: res.evaluations value: {evals}")
+    # Map evaluations
+    evals_dict = {}
+    eval_response = getattr(res, "evaluation_results", None)
+    if eval_response:
+        # access the inner list of EvaluationResult objects
+        eval_results_list = getattr(eval_response, "evaluation_results", [])
+        for eval_res in eval_results_list:
+            # Each eval_res is an EvaluationResult(name=..., passed=..., reason=...)
+            e_name = getattr(eval_res, "name", "Unknown")
+            e_passed = getattr(eval_res, "passed", False)
+            e_reason = getattr(eval_res, "reason", "")
+            evals_dict[e_name] = {"passed": e_passed, "reasoning": e_reason}
+
+    # Check for legacy/direct evaluations attribute if the above is empty
+    if not evals_dict:
+        evals = getattr(res, "evaluations", {}) or {}
+        if isinstance(evals, dict):
+            evals_dict = evals
+
+    print(f"DEBUG: Processed evaluations: {evals_dict}")
+
+    # Recording URL - prefer stereo_recording_url
+    rec_url = getattr(res, "stereo_recording_url", "")
+    if not rec_url:
+        rec_url = getattr(res, "recording_url", "") or ""
 
     return TestResultModel(
         agent=agent_name,
         scenario=scenario_name,
         passed=getattr(res, "passed", False),
         transcript=transcript,
-        recording_url=getattr(res, "recording_url", "") or "",
+        recording_url=rec_url,
         error=getattr(res, "error", None),
-        evaluations=evals,
+        evaluations=evals_dict,
     )
 
 
@@ -314,6 +336,8 @@ async def run_tests_background(config: TestConfig, ngrok_url: str, ngrok_port: i
             phone_number=phone_number_to_call,
             type=TestRunner.OUTBOUND,
         )
+
+        # print(raw_results)
 
         # 6. Serialize Results
         serialized_results = []
