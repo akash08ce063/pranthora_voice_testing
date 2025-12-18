@@ -37,17 +37,24 @@ export async function POST(request: Request) {
     const configPayload = {
         phone_number_to_call: overridePhoneNumber || agentPhoneNumber,
         // Optional: Pass twilio_phone_number if needed, otherwise Python server defaults or uses env
-        agents: (testerAgents as AgentInput[]).map((agent) => ({
-            name: agent.name,
-            prompt: agent.prompt,
-            voice_id: agent.voice_id
-        })),
+        agents: (testerAgents as AgentInput[]).map((agent) => {
+            const agentData: { name: string; prompt: string; voice_id?: string } = {
+                name: agent.name,
+                prompt: agent.prompt
+            };
+            if (agent.voice_id) {
+                agentData.voice_id = agent.voice_id;
+            }
+            return agentData;
+        }),
         scenarios: (scenarios as ScenarioInput[]).map((scenario) => ({
             name: scenario.name,
             prompt: scenario.prompt,
             evaluations: scenario.evaluations || []
         }))
     }
+
+    console.log('Sending payload to Python API:', JSON.stringify(configPayload, null, 2));
 
     // 3. Call Python FastAPI Server
     try {
@@ -99,4 +106,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

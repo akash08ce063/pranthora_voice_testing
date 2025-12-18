@@ -73,17 +73,17 @@ export const useTestStore = create<TestStore>((set) => ({
     {
       id: "default-tester",
       name: "Jessica",
-      prompt: "You are a young woman named Jessica who says 'like' a lot.",
+      prompt: "You are testing an agent that is testing another agent by talking to it.",
       voice_id: "b7d50908-b17c-442d-ad8d-810c63997ed9"
     }
   ],
   scenarios: [
     {
       id: "default-scenario",
-      name: "Order Donut",
-      prompt: "Order a dozen donuts with sprinkles and a coffee.",
+      name: "Test calling",
+      prompt: "Say hello in the beginning. Then try to end the conversation as soon as possible.",
       evaluations: [
-        { id: "eval-1", name: "order_success", prompt: "the order was successful" }
+        { id: "eval-1", name: "call_completed", prompt: "the call competed without errors" }
       ]
     }
   ],

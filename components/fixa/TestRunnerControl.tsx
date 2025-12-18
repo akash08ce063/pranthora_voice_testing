@@ -3,20 +3,21 @@
 import { Button } from '@/components/ui/button';
 import { useTestStore } from '@/src/store/useTestStore';
 import { Play } from 'lucide-react';
-import { useState } from 'react';
 
 export function TestRunnerControl() {
     const {
+        agents,
         selectedAgentId,
         testerAgents,
         scenarios,
         setTestResults,
         setIsLoading,
+        isLoading, // Add this
         clearLogs,
         addLog
     } = useTestStore();
 
-    const [isRunning, setIsRunning] = useState(false);
+    // Removed local isRunning state
 
     const handleRunTest = async () => {
         if (!selectedAgentId) {
@@ -24,40 +25,63 @@ export function TestRunnerControl() {
              return;
         }
 
-        setIsRunning(true);
         setIsLoading(true);
         setTestResults(null);
         clearLogs();
         addLog('Starting test suite execution...');
 
         try {
+            // Get the selected agent's phone number
+            const selectedAgent = agents.find(a => a.id === selectedAgentId);
+            if (!selectedAgent) {
+                addLog('ERROR: Selected agent not found');
+                setIsLoading(false);
+                return;
+            }
+
+            // Transform the payload to match Python API's TestConfig model
+            const payload = {
+                phone_number_to_call: selectedAgent.phoneNumber,
+                agents: testerAgents.map(agent => ({
+                    name: agent.name,
+                    prompt: agent.prompt,
+                    ...(agent.voice_id && { voice_id: agent.voice_id })
+                })),
+                scenarios: scenarios.map(scenario => ({
+                    name: scenario.name,
+                    prompt: scenario.prompt,
+                    evaluations: scenario.evaluations.map(evaluation => ({
+                        name: evaluation.name,
+                        prompt: evaluation.prompt
+                    }))
+                }))
+            };
+
             const response = await fetch('/api/test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    dummy: true, // Keeping existing logic
-                    agentId: selectedAgentId,
-                    testers: testerAgents,
-                    scenarios: scenarios
-                })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                setTestResults(data);
-                addLog('Test suite completed successfully.');
+                // Async job started successfully.
+                // We keep isLoading(true). The LogStreamViewer will listen for the 'result' event
+                // and call setTestResults(results) and setIsLoading(false).
+                addLog(`Job started: ${data.job_id}. Waiting for completion...`);
             } else {
-                console.error('Test run failed:', data.error);
-                addLog(`ERROR: Test run failed: ${data.error}`);
+                console.error('Test run failed to start:', data.error || data.detail);
+                addLog(`ERROR: Test run failed to start: ${data.error || data.detail}`);
+                setIsLoading(false); // Only reset if start failed
             }
         } catch (error) {
             console.error('Network error during test:', error);
             addLog(`ERROR: Network error during test execution.`);
-        } finally {
             setIsLoading(false);
-            setIsRunning(false);
         }
+        // NOTE: We do NOT set setIsRunning(false) or setIsLoading(false) here on success.
+        // That happens when the SSE 'result' event is received.
     };
 
     const isValid = selectedAgentId && testerAgents.length > 0 && scenarios.length > 0;
@@ -68,9 +92,9 @@ export function TestRunnerControl() {
                 size="lg"
                 className="w-full text-lg h-14 font-semibold shadow-lg hover:shadow-xl transition-all"
                 onClick={handleRunTest}
-                disabled={isRunning || !isValid}
+                disabled={isLoading || !isValid}
             >
-                {isRunning ? (
+                {isLoading ? (
                     <>
                         <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-white mr-2"></div>
                         Running Tests...

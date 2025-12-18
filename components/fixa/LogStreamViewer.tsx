@@ -8,10 +8,12 @@ import { Terminal } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 export function LogStreamViewer() {
-    const { logs, addLog, isLoading } = useTestStore();
+    const { logs, addLog, isLoading, setTestResults, setIsLoading } = useTestStore();
     const endRef = useRef<HTMLDivElement>(null);
 
     // Connect to log stream only when test is running
+    // Actually, with the new async architecture, we might want to stay connected or connect on demand.
+    // For now, let's keep the logic bound to `isLoading` but handle the 'result' event to turn it off.
     useEffect(() => {
         // Only connect if a test is currently running
         if (!isLoading) {
@@ -26,7 +28,13 @@ export function LogStreamViewer() {
                 eventSource.close();
             }
 
-            eventSource = new EventSource('/api/logs');
+            // Direct connection to Python backend (port 8000)
+            // Dynamically determine host to support LAN/Remote access
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const backendUrl = `${protocol}//${hostname}:8000/logs`;
+
+            eventSource = new EventSource(backendUrl);
 
             eventSource.onopen = () => {
                 console.log('Connected to log stream');
@@ -34,16 +42,32 @@ export function LogStreamViewer() {
 
             eventSource.onmessage = (event) => {
                 try {
-                    const raw = event.data;
-                    addLog(raw);
+                    // Parse the event data which is now a JSON string containing type and payload
+                    const data = JSON.parse(event.data);
+
+                    if (data.type === 'log') {
+                        addLog(data.payload);
+                    } else if (data.type === 'result') {
+                        console.log("Received test results:", data.payload);
+                        setTestResults(data.payload);
+                        setIsLoading(false);
+                        eventSource?.close(); // Stop listening explicitly
+                    } else if (data.type === 'error') {
+                        console.error("Received error:", data.payload);
+                        addLog(`ERROR: ${data.payload}`);
+                        setIsLoading(false);
+                        eventSource?.close();
+                    }
                 } catch (e) {
-                    console.error('Error parsing log:', e);
+                    // Fallback for raw string logs if any legacy ones come through
+                    console.warn('Error parsing log event, treating as raw text:', e);
+                    addLog(event.data);
                 }
             };
 
             eventSource.onerror = (err) => {
                 console.error('Log stream error:', err);
-                eventSource?.close();
+                // Don't close immediately on error, might be temporary
             };
         };
 
@@ -52,7 +76,7 @@ export function LogStreamViewer() {
         return () => {
             eventSource?.close();
         };
-    }, [addLog, isLoading]);
+    }, [addLog, isLoading, setTestResults, setIsLoading]);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -63,7 +87,7 @@ export function LogStreamViewer() {
         <Card className="flex flex-col h-full bg-zinc-950 border-zinc-800 shadow-inner">
             <CardHeader className="py-3 px-4 border-b border-zinc-800 bg-zinc-900/50">
                 <div className="flex items-center justify-between">
-                     <CardTitle className="text-sm font-mono text-zinc-400 flex items-center gap-2">
+                    <CardTitle className="text-sm font-mono text-zinc-400 flex items-center gap-2">
                         <Terminal className="w-4 h-4" />
                         System Logs
                     </CardTitle>
@@ -84,7 +108,7 @@ export function LogStreamViewer() {
                                 {log}
                             </div>
                         ))}
-                         <div ref={endRef} />
+                        <div ref={endRef} />
                     </div>
                 </ScrollArea>
             </CardContent>

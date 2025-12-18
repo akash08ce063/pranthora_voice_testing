@@ -6,10 +6,11 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 
 export function ThemeToggle() {
@@ -30,40 +31,24 @@ export function ThemeToggle() {
     )
   }
 
-  const getThemeLabel = () => {
-    switch (theme) {
-      case "light":
-        return "Light"
-      case "dark":
-        return "Dark"
-      default:
-        return "System"
-    }
-  }
-
-  const getIcon = () => {
-    switch (theme) {
-      case "light":
-        return <Sun className="h-[1.2rem] w-[1.2rem]" />
-      case "dark":
-        return <Moon className="h-[1.2rem] w-[1.2rem]" />
-      default:
-        return <Monitor className="h-[1.2rem] w-[1.2rem]" />
-    }
-  }
-
   return (
     <Select value={theme} onValueChange={setTheme}>
       <SelectTrigger className="w-[140px]">
-        <div className="flex items-center gap-2">
-          {getIcon()}
-          <span>{getThemeLabel()}</span>
-        </div>
+        <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="light">Light</SelectItem>
-        <SelectItem value="dark">Dark</SelectItem>
-        <SelectItem value="system">System</SelectItem>
+        <SelectItem value="light">
+          <Sun className="h-4 w-4" />
+          Light
+        </SelectItem>
+        <SelectItem value="dark">
+          <Moon className="h-4 w-4" />
+          Dark
+        </SelectItem>
+        <SelectItem value="system">
+          <Monitor className="h-4 w-4" />
+          System
+        </SelectItem>
       </SelectContent>
     </Select>
   )

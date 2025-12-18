@@ -20,7 +20,7 @@ TEST_RESPONSE = {
         {
             "agent": "TestAgent",
             "scenario": "TestScenario",
-            "passed": False,
+            "passed": True,
             "transcript": [
                 {
                     "role": "system",
@@ -49,7 +49,7 @@ TEST_RESPONSE = {
             },
         }
     ],
-    "passed": False,
+    "passed": True,
 }
 
 LOG_DATA_RAW = """data: 2025-12-16 16:11:08 | INFO | Setting VAD params to: confidence=0.7 start_secs=0.2 stop_secs=0.8 min_volume=0.6
