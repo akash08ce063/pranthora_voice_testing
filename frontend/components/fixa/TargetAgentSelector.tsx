@@ -25,7 +25,7 @@ export function TargetAgentSelector() {
 
     return (
         <Card className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
+            <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                     <Bot className="w-5 h-5 text-primary" />
                     Target Agent
