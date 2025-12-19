@@ -1,9 +1,0 @@
-{
-  "/_global-error/page": "/_global-error",
-  "/_not-found/page": "/_not-found",
-  "/api/agents/route": "/api/agents",
-  "/api/run-test/route": "/api/run-test",
-  "/favicon.ico/route": "/favicon.ico",
-  "/page": "/",
-  "/test/page": "/test"
-}
