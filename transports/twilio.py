@@ -1,14 +1,16 @@
 """Twilio transport implementation for agent-to-agent communication."""
 
 import asyncio
+import base64
 import json
-import logging
+import traceback
 from collections import deque
 from typing import Optional
 
 from transports.base import AbstractTransport
+from utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TwilioTransport(AbstractTransport):
@@ -51,22 +53,12 @@ class TwilioTransport(AbstractTransport):
         self._started = False
 
     @property
-    def agent_id(self) -> str:
-        """Get the agent ID."""
-        return self._agent_id
-
-    @property
-    def phone_number(self) -> str:
-        """Get the phone number."""
-        return self._phone_number
-
-    @property
     def call_sid(self) -> Optional[str]:
         """Get the Twilio Call SID."""
         return self._call_sid
 
     @call_sid.setter
-    def call_sid(self, value: str) -> None:
+    def call_sid(self, value: Optional[str]) -> None:
         """Set the Twilio Call SID."""
         self._call_sid = value
 
@@ -139,21 +131,32 @@ class TwilioTransport(AbstractTransport):
             return
 
         try:
+            # Ensure data is bytes
+            if not isinstance(data, bytes):
+                logger.error(f"Expected bytes, got {type(data)}: {data[:100] if isinstance(data, (str, bytes)) else data}")
+                return
+
             # Twilio expects base64-encoded mulaw audio
-            import base64
 
             payload = base64.b64encode(data).decode("utf-8")
 
             message = {"event": "media", "streamSid": self._stream_sid, "media": {"payload": payload}}
 
-            await self._websocket.send(json.dumps(message))
+            # FastAPI WebSocket uses send_text() for text messages
+            await self._websocket.send_text(json.dumps(message))
 
         except Exception as e:
             logger.error(f"Error sending data for agent {self._agent_id}: {e}")
 
+            logger.error(traceback.format_exc())
+
     async def receive(self, timeout: float = 1.0) -> bytes | str | None:
         """
         Receive data from the Twilio media stream.
+
+        The WebSocket handler continuously reads messages and queues them.
+        This method only consumes from the queue - it does NOT read directly
+        from the WebSocket to avoid race conditions.
 
         Args:
             timeout: Maximum time to wait for data in seconds.
@@ -168,17 +171,21 @@ class TwilioTransport(AbstractTransport):
         if self._receive_queue:
             return self._receive_queue.popleft()
 
+        # Don't read directly from WebSocket - the WebSocket handler does that
+        # Wait a bit and check the queue again
         try:
-            message = await asyncio.wait_for(self._websocket.recv(), timeout=timeout)
+            # Wait for a short time, then check queue again
+            # This allows the WebSocket handler to populate the queue
+            await asyncio.sleep(min(timeout, 0.1))
 
-            return await self._process_message(message)
+            # Check queue again after waiting
+            if self._receive_queue:
+                return self._receive_queue.popleft()
 
-        except asyncio.TimeoutError:
             return None
         except Exception as e:
-            logger.error(f"Error receiving from agent {self._agent_id}: {e}")
-            self._connected = False
-            raise
+            logger.error(f"Error in receive for agent {self._agent_id}: {e}")
+            return None
 
     async def _process_message(self, message: str) -> bytes | str | None:
         """
@@ -212,7 +219,6 @@ class TwilioTransport(AbstractTransport):
                 payload = data.get("media", {}).get("payload")
                 if payload:
                     # Decode base64 mulaw audio
-                    import base64
 
                     audio_bytes = base64.b64decode(payload)
                     return audio_bytes
@@ -257,27 +263,3 @@ class TwilioTransport(AbstractTransport):
     def is_connected(self) -> bool:
         """Check if the transport is connected."""
         return self._connected and self._websocket is not None
-
-    @property
-    def is_started(self) -> bool:
-        """Check if the media stream has started."""
-        return self._started
-
-    async def wait_for_start(self, timeout: float = 10.0) -> bool:
-        """
-        Wait until the media stream has started.
-
-        Args:
-            timeout: Maximum time to wait in seconds.
-
-        Returns:
-            True if started within timeout, False otherwise.
-        """
-        start_time = asyncio.get_event_loop().time()
-        while not self._started:
-            if asyncio.get_event_loop().time() - start_time > timeout:
-                logger.warning(f"Timeout waiting for stream start on agent {self._agent_id}")
-                return False
-            await asyncio.sleep(0.1)
-        logger.info(f"Stream started for agent {self._agent_id}")
-        return True

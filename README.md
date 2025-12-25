@@ -90,7 +90,8 @@ Requires environment variables:
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_PHONE_NUMBER`
-- `TWILIO_WEBHOOK_BASE_URL` (must be publicly accessible)
+- `TWILIO_WEBHOOK_BASE_URL` (must be publicly accessible, for HTTP webhooks)
+- `TWILIO_WEBSOCKET_BASE_URL` (must be publicly accessible, for WebSocket media streams, e.g., `wss://your-domain.com`)
 
 ```bash
 # Start call

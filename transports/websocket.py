@@ -1,14 +1,14 @@
 """WebSocket transport implementation for agent communication."""
 
 import asyncio
-import logging
 
 import websockets
 from websockets.asyncio.client import ClientConnection
 
 from transports.base import AbstractTransport
+from utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class WebSocketTransport(AbstractTransport):
@@ -31,7 +31,6 @@ class WebSocketTransport(AbstractTransport):
         self._agent_id = agent_id
         self._websocket: ClientConnection | None = None
         self._connected = False
-        self._started = False
 
     def _build_url(self) -> str:
         """Build the full WebSocket URL for the agent."""
@@ -45,7 +44,6 @@ class WebSocketTransport(AbstractTransport):
 
             self._websocket = await websockets.connect(url)
             self._connected = True
-            self._started = True  # WebSocket is ready immediately after connection
 
             logger.info(f"Successfully connected to agent {self._agent_id}")
             return True
@@ -53,7 +51,6 @@ class WebSocketTransport(AbstractTransport):
         except Exception as e:
             logger.error(f"Failed to connect to agent {self._agent_id}: {e}")
             self._connected = False
-            self._started = False
             return False
 
     async def disconnect(self) -> None:
@@ -67,7 +64,6 @@ class WebSocketTransport(AbstractTransport):
             finally:
                 self._websocket = None
                 self._connected = False
-                self._started = False
 
     async def send(self, data: bytes) -> None:
         """Send data through the WebSocket."""
@@ -102,24 +98,3 @@ class WebSocketTransport(AbstractTransport):
     def agent_id(self) -> str:
         """Get the agent ID for this transport."""
         return self._agent_id
-
-    async def wait_for_start(self, timeout: float = 10.0) -> bool:
-        """
-        Wait until the media stream has started.
-
-        For WebSocket transport, this is immediately ready after connection.
-
-        Args:
-            timeout: Maximum time to wait in seconds.
-
-        Returns:
-            True if started within timeout, False otherwise.
-        """
-        start_time = asyncio.get_event_loop().time()
-        while not self._started:
-            if asyncio.get_event_loop().time() - start_time > timeout:
-                logger.warning(f"Timeout waiting for stream start on agent {self._agent_id}")
-                return False
-            await asyncio.sleep(0.1)
-        logger.info(f"Stream started for agent {self._agent_id}")
-        return True

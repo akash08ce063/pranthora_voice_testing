@@ -1,35 +1,22 @@
 """WebSocket-based conversation routes."""
 
 import asyncio
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
 
-from bridge import AgentBridge, BridgeStatus
+from call_bridges.base import BaseBridge
+from models.api import ConversationResponse, StartConversationRequest
+from models.bridge import BridgeStatus
+from recorders.conversation_recorder import ConversationRecorder
 from transports.websocket import WebSocketTransport
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/conversations", tags=["WebSocket Conversations"])
 
 # Store active bridges
-active_bridges: dict[str, AgentBridge] = {}
-
-
-class StartConversationRequest(BaseModel):
-    backend_ws_url: str = Field(..., description="WebSocket URL of the voice backend")
-    agent_a_id: str = Field(..., description="ID of the first agent")
-    agent_b_id: str = Field(..., description="ID of the second agent")
-    conversation_id: Optional[str] = Field(None, description="Optional custom conversation ID")
-    max_duration_seconds: Optional[int] = Field(None, gt=0)
-    recording_enabled: bool = Field(True)
-    recording_path: str = Field("recordings")
-
-
-class ConversationResponse(BaseModel):
-    success: bool
-    conversation_id: str
-    message: str
-    status: dict
+active_bridges: dict[str, BaseBridge] = {}
 
 
 def _create_websocket_transport(backend_url: str, agent_id: str) -> WebSocketTransport:
@@ -40,15 +27,16 @@ def _create_websocket_transport(backend_url: str, agent_id: str) -> WebSocketTra
 @router.post("", response_model=ConversationResponse)
 async def start_conversation(request: StartConversationRequest):
     """Start a new WebSocket-based agent-to-agent conversation."""
-    bridge = AgentBridge(
+    bridge = BaseBridge(
         transport_factory=_create_websocket_transport,
         backend_url=request.backend_ws_url,
         agent_a_id=request.agent_a_id,
         agent_b_id=request.agent_b_id,
+        recording_path=request.recording_path,
+        recorder_factory=lambda conv_id, path: ConversationRecorder(conv_id, path),
+        recording_enabled=request.recording_enabled,
         conversation_id=request.conversation_id,
         max_duration_seconds=request.max_duration_seconds,
-        recording_enabled=request.recording_enabled,
-        recording_path=request.recording_path,
     )
 
     if bridge.conversation_id in active_bridges:
@@ -69,7 +57,7 @@ async def start_conversation(request: StartConversationRequest):
     )
 
 
-async def _run_bridge(bridge: AgentBridge):
+async def _run_bridge(bridge: BaseBridge):
     """Run bridge until completion."""
     try:
         await asyncio.gather(*bridge._tasks, return_exceptions=True)

@@ -54,16 +54,3 @@ class AbstractTransport(ABC):
     def is_connected(self) -> bool:
         """Check if the transport is currently connected."""
         ...
-
-    @abstractmethod
-    async def wait_for_start(self, timeout: float = 10.0) -> bool:
-        """
-        Wait until the media stream has started.
-
-        Args:
-            timeout: Maximum time to wait in seconds.
-
-        Returns:
-            True if started within timeout, False otherwise.
-        """
-        ...

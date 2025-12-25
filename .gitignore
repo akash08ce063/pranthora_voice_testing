@@ -15,6 +15,7 @@ wheels/
 # IDE Configurations
 .vscode
 .idea
+.cursor
 
 # Audio recordings
 recordings/

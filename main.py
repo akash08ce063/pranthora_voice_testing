@@ -11,10 +11,18 @@ Usage:
 """
 
 import argparse
+import logging
 
 import uvicorn
+from dotenv import load_dotenv
 
 from api.app import app
+from utils.logger import get_logger, setup_logging
+
+# Load environment variables from .env file
+load_dotenv()
+
+logger = get_logger(__name__)
 
 
 def main():
@@ -46,16 +54,28 @@ def main():
 
     args = parser.parse_args()
 
-    print(f"""
-╔══════════════════════════════════════════════════════════════╗
-║                   Agent Bridge Service                       ║
-║                                                              ║
-║  Enables two voice agents to have a real-time conversation   ║
-╚══════════════════════════════════════════════════════════════╝
+    # Convert uvicorn log level format to logging level
+    log_level_map = {
+        "debug": logging.DEBUG,
+        "info": logging.INFO,
+        "warning": logging.WARNING,
+        "error": logging.ERROR,
+        "critical": logging.CRITICAL,
+    }
+    log_level = log_level_map.get(args.log_level.lower(), logging.INFO)
 
-Server starting on http://{args.host}:{args.port}
-API docs available at http://{args.host}:{args.port}/docs
-""")
+    # Setup logging with the specified level
+    setup_logging(log_level=log_level)
+
+    logger.info("")
+    logger.info("╔══════════════════════════════════════════════════════════════╗")
+    logger.info("║                   Agent Bridge Service                       ║")
+    logger.info("║                                                              ║")
+    logger.info("║  Enables two voice agents to have a real-time conversation   ║")
+    logger.info("╚══════════════════════════════════════════════════════════════╝")
+    logger.info("")
+    logger.info(f"Server starting on http://{args.host}:{args.port}")
+    logger.info(f"API docs available at http://{args.host}:{args.port}/docs")
 
     uvicorn.run(
         "api.app:app" if args.reload else app,

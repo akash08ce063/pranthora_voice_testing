@@ -1,78 +1,36 @@
 """
-Agent Bridge - Routes audio between two voice agents via transport connections.
+Base bridge implementation for agent-to-agent communication.
+
+This module contains the core bridge logic that can be inherited
+by transport-specific bridge implementations (WebSocket, Twilio, etc.).
 """
 
 import asyncio
-import logging
-from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
 from typing import Callable, Optional
 
-from audio_recorder import ConversationRecorder
+from models.bridge import AgentConnection, BridgeStatus, ConversationStats
+from recorders.conversation_recorder import ConversationRecorder
 from transports.base import AbstractTransport
+from utils.logger import get_logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-class BridgeStatus(str, Enum):
-    IDLE = "idle"
-    CONNECTING = "connecting"
-    ACTIVE = "active"
-    STOPPING = "stopping"
-    STOPPED = "stopped"
-    ERROR = "error"
-
-
-@dataclass
-class ConversationStats:
-    """Statistics for an agent-to-agent conversation."""
-
-    started_at: Optional[datetime] = None
-    ended_at: Optional[datetime] = None
-    agent_a_bytes_sent: int = 0
-    agent_b_bytes_sent: int = 0
-    agent_a_messages: int = 0
-    agent_b_messages: int = 0
-    first_audio_at: Optional[datetime] = None
-    time_to_first_audio: Optional[float] = None
-
-    @property
-    def total_bytes(self) -> int:
-        """Total bytes transferred in both directions."""
-        return self.agent_a_bytes_sent + self.agent_b_bytes_sent
-
-    @property
-    def duration_seconds(self) -> Optional[float]:
-        """Total conversation duration in seconds."""
-        if self.started_at:
-            end_time = self.ended_at or datetime.now()
-            return (end_time - self.started_at).total_seconds()
-        return None
-
-
-@dataclass
-class AgentConnection:
-    """Represents a connection to a single agent via a transport."""
-
-    agent_id: str
-    transport: AbstractTransport
-    buffered_message: Optional[bytes] = field(default=None)
-
-    @property
-    def is_connected(self) -> bool:
-        return self.transport.is_connected
+logger = get_logger(__name__)
 
 
 # Type alias for transport factory function
 TransportFactory = Callable[[str, str], AbstractTransport]
 
+# Type alias for recorder factory function
+RecorderFactory = Callable[[str, str], ConversationRecorder]
 
-class AgentBridge:
+
+class BaseBridge:
     """
-    Bridges two voice agents by connecting via transports
-    and routing audio between them bidirectionally.
+    Base bridge implementation for connecting two voice agents.
+
+    This class contains the core logic for routing audio between agents
+    via transports. Transport-specific bridge implementations should
+    inherit from this class and override methods as needed.
     """
 
     def __init__(
@@ -82,6 +40,7 @@ class AgentBridge:
         agent_a_id: str,
         agent_b_id: str,
         recording_path: str,
+        recorder_factory: RecorderFactory,
         recording_enabled: bool = True,
         conversation_id: Optional[str] = None,
         max_duration_seconds: Optional[int] = None,
@@ -99,6 +58,8 @@ class AgentBridge:
             max_duration_seconds: Optional maximum duration for the call in seconds.
             recording_enabled: Whether to record the conversation audio.
             recording_path: Directory to save recordings.
+            recorder_factory: Factory function that creates recorders.
+                              Signature: (conversation_id, recording_path) -> ConversationRecorder
         """
         self.backend_url = backend_url
         self.conversation_id = conversation_id or f"conv_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -123,6 +84,7 @@ class AgentBridge:
         # Audio recording
         self.recording_enabled = recording_enabled
         self.recording_path = recording_path
+        self._recorder_factory = recorder_factory
         self._recorder: Optional[ConversationRecorder] = None
 
     async def _connect_agent(self, agent: AgentConnection) -> bool:
@@ -154,7 +116,7 @@ class AgentBridge:
             logger.info(f"[{self.conversation_id}] {source_name} forwarding buffered message ({len(source.buffered_message)} bytes)")
             try:
                 await destination.transport.send(source.buffered_message)
-                self._record_and_track_audio(source.buffered_message, source_name)
+                await self._record_and_track_audio(source.buffered_message, source_name)
             except Exception as e:
                 logger.error(f"[{self.conversation_id}] Error forwarding buffered message in {source_name}: {e}")
             finally:
@@ -175,7 +137,7 @@ class AgentBridge:
                     # Log at INFO so we can see if/when raw audio frames flow
                     logger.info(f"[{self.conversation_id}] {source_name} received {len(message)} bytes")
                     await destination.transport.send(message)
-                    self._record_and_track_audio(message, source_name)
+                    await self._record_and_track_audio(message, source_name)
                 elif isinstance(message, str):
                     # Log at info so we can see what kind of text frames the backend sends
                     truncated = message[:200]
@@ -187,10 +149,10 @@ class AgentBridge:
 
         logger.info(f"[{self.conversation_id}] Stopped audio routing: {source_name}")
 
-    def _record_and_track_audio(self, audio_data: bytes, source_name: str) -> None:
+    async def _record_and_track_audio(self, audio_data: bytes, source_name: str) -> None:
         """Record audio and update statistics."""
         if self._recorder and self._recorder.is_open:
-            self._recorder.write_audio(audio_data)
+            await self._recorder.write_audio(audio_data)
 
         # Track first audio timestamp
         if self.stats.first_audio_at is None:
@@ -249,11 +211,11 @@ class AgentBridge:
 
             # Initialize audio recorder if enabled
             if self.recording_enabled:
-                self._recorder = ConversationRecorder(
-                    conversation_id=self.conversation_id,
-                    recording_path=self.recording_path,
+                self._recorder = self._recorder_factory(
+                    self.conversation_id,
+                    self.recording_path,
                 )
-                if not self._recorder.open():
+                if not await self._recorder.open():
                     logger.error(f"[{self.conversation_id}] Failed to start audio recording")
                     self._recorder = None
 
@@ -313,7 +275,7 @@ class AgentBridge:
 
         # Close audio recorder
         if self._recorder is not None:
-            self._recorder.close()
+            await self._recorder.close()
             self._recorder = None
 
         self.stats.ended_at = datetime.now()
@@ -358,7 +320,7 @@ class AgentBridge:
         if self.recording_enabled:
             status_dict["recording"] = {
                 "enabled": True,
-                "file_path": self._recorder.file_path if self._recorder else None,
+                "file_path": str(self._recorder.filepath) if self._recorder else None,
                 "is_recording": self._recorder.is_open if self._recorder else False,
             }
         else:
