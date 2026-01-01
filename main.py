@@ -9,12 +9,20 @@ import os
 import uvicorn
 from telemetrics.logger import logger
 
+# Import and initialize static memory cache
+from static_memory_cache import StaticMemoryCache
+
 # Import the FastAPI app
 from api.app import app
 
 
 def main():
     """Main entry point."""
+    # Initialize static memory cache
+    logger.info("Initializing static memory cache...")
+    StaticMemoryCache.initialize()
+    logger.info("Static memory cache initialized successfully")
+
     # Get configuration from environment variables
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8080"))

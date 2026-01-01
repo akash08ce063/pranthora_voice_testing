@@ -1,0 +1,87 @@
+"""
+Static Memory Cache for Voice Testing Platform.
+
+This module provides static memory caching for configuration and shared resources,
+similar to pranthora_backend's static memory cache pattern.
+"""
+
+import json
+import os
+from typing import Dict, Any, Optional
+
+
+class StaticMemoryCache:
+    """Static memory cache for storing configuration and shared resources."""
+
+    # Static class variables
+    config: Dict[str, Any] = {}
+    _initialized: bool = False
+
+    @classmethod
+    def initialize(cls, config_file: str = "config.json"):
+        """Load config into memory at startup."""
+        if cls._initialized:
+            return
+
+        config_path = os.path.join(os.path.dirname(__file__), config_file)
+        try:
+            with open(config_path, "r") as f:
+                cls.config = json.load(f)
+            cls._initialized = True
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Config file not found: {config_path}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in config file: {e}")
+
+    @classmethod
+    def get_config(cls, section: str, key: str, default=None):
+        """Retrieve configuration value from the static memory cache."""
+        if not cls._initialized:
+            cls.initialize()
+        return cls.config.get(section, {}).get(key, default)
+
+    @classmethod
+    def get_section(cls, section: str) -> Dict[str, Any]:
+        """Retrieve entire configuration section."""
+        if not cls._initialized:
+            cls.initialize()
+        return cls.config.get(section, {})
+
+    @classmethod
+    def get_supabase_url(cls) -> str:
+        """Get Supabase URL from config."""
+        return cls.get_config("database", "supabase_url")
+
+    @classmethod
+    def get_supabase_key(cls) -> str:
+        """Get Supabase API key from config."""
+        return cls.get_config("database", "supabase_key")
+
+    @classmethod
+    def get_pranthora_api_key(cls) -> str:
+        """Get Pranthora API key from config."""
+        return cls.get_config("pranthora", "api_key")
+
+    @classmethod
+    def get_pranthora_base_url(cls) -> str:
+        """Get Pranthora base URL from config."""
+        return cls.get_config("pranthora", "base_url")
+
+    @classmethod
+    def get_database_config(cls) -> Dict[str, str]:
+        """Get complete database configuration."""
+        return cls.get_section("database")
+
+    @classmethod
+    def get_pranthora_config(cls) -> Dict[str, str]:
+        """Get complete Pranthora configuration."""
+        return cls.get_section("pranthora")
+
+    @classmethod
+    def is_initialized(cls) -> bool:
+        """Check if cache has been initialized."""
+        return cls._initialized
+
+
+# Initialize on import
+StaticMemoryCache.initialize()

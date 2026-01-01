@@ -84,6 +84,7 @@ class UserAgentBase(BaseModel):
     system_prompt: str = Field(..., description="System prompt for the agent")
     evaluation_criteria: Optional[Dict[str, Any]] = Field(None, description="Evaluation criteria")
     agent_model_config: Optional[Dict[str, Any]] = Field(None, description="Model configuration settings")
+    pranthora_agent_id: Optional[str] = Field(None, description="Corresponding agent ID in Pranthora backend")
 
 
 class UserAgentCreate(UserAgentBase):

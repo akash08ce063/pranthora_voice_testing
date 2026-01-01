@@ -1,28 +1,60 @@
 """
-User agent CRUD service.
+User agent CRUD service with Pranthora API integration.
 
-This module provides CRUD operations for user agents.
+This module provides CRUD operations for user agents, integrating with both
+local database and Pranthora backend API.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 
 from services.database_service import DatabaseService
+from services.pranthora_api_client import PranthoraApiClient
 from models.test_suite_models import UserAgentCreate, UserAgentUpdate, UserAgent
 from telemetrics.logger import logger
 
 
 class UserAgentService(DatabaseService[UserAgent]):
-    """Service for user agent CRUD operations."""
+    """Service for user agent CRUD operations with Pranthora API integration."""
 
     def __init__(self):
         super().__init__("user_agents")
 
+    async def _get_pranthora_client(self) -> PranthoraApiClient:
+        """Get Pranthora API client instance."""
+        return PranthoraApiClient()
+
     async def create_user_agent(self, user_id: UUID, data: UserAgentCreate) -> UUID:
-        """Create a new user agent."""
+        """Create a new user agent in both local DB and Pranthora."""
         agent_data = data.model_dump()
         agent_data["user_id"] = user_id
-        return await self.create(agent_data)
+
+        # First create agent in Pranthora
+        async with PranthoraApiClient() as client:
+            try:
+                pranthora_response = await client.create_agent({
+                    "name": data.name,
+                    "description": data.description,
+                    "is_active": True,
+                    "system_prompt": data.system_prompt,
+                    "model_config": data.model_config or {}
+                })
+
+                # Store Pranthora agent ID in our database
+                agent_data["pranthora_agent_id"] = pranthora_response["agent"]["id"]
+                logger.info(f"Created agent in Pranthora: {agent_data['pranthora_agent_id']}")
+
+            except Exception as e:
+                logger.error(f"Failed to create agent in Pranthora: {e}")
+                # For now, allow creation without Pranthora agent
+                # In production, you might want to raise an error
+                agent_data["pranthora_agent_id"] = None
+
+        # Create agent in our local database
+        local_agent_id = await self.create(agent_data)
+        logger.info(f"Created agent in local DB: {local_agent_id}")
+
+        return local_agent_id
 
     async def get_user_agent(self, agent_id: UUID) -> Optional[UserAgent]:
         """Get a user agent by ID."""
@@ -39,12 +71,49 @@ class UserAgentService(DatabaseService[UserAgent]):
         return [UserAgent(**result) for result in results]
 
     async def update_user_agent(self, agent_id: UUID, data: UserAgentUpdate) -> bool:
-        """Update a user agent."""
+        """Update a user agent in both local DB and Pranthora."""
         update_data = data.model_dump(exclude_unset=True)
-        return await self.update(agent_id, update_data)
+
+        # Update local database first
+        local_success = await self.update(agent_id, update_data)
+        if not local_success:
+            return False
+
+        # Update in Pranthora if we have a pranthora_agent_id
+        try:
+            # Get the agent to check if it has a pranthora_agent_id
+            agent_result = await self.get_by_id(agent_id)
+            if agent_result and agent_result.get("pranthora_agent_id"):
+                async with PranthoraApiClient() as client:
+                    await client.update_agent(
+                        agent_result["pranthora_agent_id"],
+                        update_data
+                    )
+                logger.info(f"Updated agent in Pranthora: {agent_result['pranthora_agent_id']}")
+        except Exception as e:
+            logger.error(f"Failed to update agent in Pranthora: {e}")
+            # Don't fail the local update if Pranthora update fails
+
+        return True
 
     async def delete_user_agent(self, agent_id: UUID) -> bool:
-        """Delete a user agent."""
+        """Delete a user agent from both local DB and Pranthora."""
+        # Get the agent first to check if it has a pranthora_agent_id
+        agent_result = await self.get_by_id(agent_id)
+        if not agent_result:
+            return False
+
+        # Delete from Pranthora if we have a pranthora_agent_id
+        if agent_result.get("pranthora_agent_id"):
+            try:
+                async with PranthoraApiClient() as client:
+                    await client.delete_agent(agent_result["pranthora_agent_id"])
+                logger.info(f"Deleted agent from Pranthora: {agent_result['pranthora_agent_id']}")
+            except Exception as e:
+                logger.error(f"Failed to delete agent from Pranthora: {e}")
+                # Don't fail the local delete if Pranthora delete fails
+
+        # Delete from local database
         return await self.delete(agent_id)
 
     async def get_user_agent_count(self, user_id: UUID) -> int:

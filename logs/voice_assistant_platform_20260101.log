@@ -16,3 +16,6 @@
 2026-01-01 13:01:55 [INFO] logging:emit:1160 [PID:86221] [TID:8470126720] Voice Testing Platform shutdown
 2026-01-01 13:05:27 [INFO] logging:emit:1160 [PID:86720] [TID:8470126720] Starting Voice Testing Platform on 0.0.0.0:8080
 2026-01-01 13:05:27 [INFO] logging:emit:1160 [PID:86720] [TID:8470126720] Voice Testing Platform startup
+2026-01-01 13:57:50 [ERROR] logging:emit:1160 [PID:88397] [TID:8470126720] Migration failed: 'DatabaseService' object has no attribute 'connect'
+2026-01-01 13:58:07 [INFO] logging:emit:1160 [PID:88481] [TID:8470126720] Connecting to database...
+2026-01-01 13:59:07 [ERROR] logging:emit:1160 [PID:88481] [TID:8470126720] Migration failed: 

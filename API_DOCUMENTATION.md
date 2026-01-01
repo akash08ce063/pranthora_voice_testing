@@ -461,6 +461,7 @@ curl -X POST "http://localhost:8080/v1/user-agents?user_id=12345678-1234-1234-12
   "system_prompt": "You are a helpful assistant",
   "evaluation_criteria": {"accuracy": 0.8},
   "model_config": {"temperature": 0.7},
+  "pranthora_agent_id": "pranthora-agent-12345",
   "created_at": "2026-01-01T13:00:00",
   "updated_at": "2026-01-01T13:00:00"
 }
