@@ -69,12 +69,12 @@ class SupabaseClient:
     async def update(self, table_name: str, filters: Dict[str, Any], data: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
         """Update data in a table."""
         try:
-            query = self.async_client.table(table_name)
+            query = self.async_client.table(table_name).update(data)
 
             for key, value in filters.items():
                 query = query.eq(key, value)
 
-            result = await query.update(data).execute()
+            result = await query.execute()
             return result.data if result.data else None
         except Exception as e:
             logger.error(f"Error updating {table_name}: {str(e)}")

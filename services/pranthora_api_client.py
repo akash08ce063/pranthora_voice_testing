@@ -73,14 +73,16 @@ class PranthoraApiClient:
             Created agent response
         """
         try:
-            # Prepare the request data
+            # Prepare the request data - exclude temperature from agent data since it's not part of AgentCreateRequest
+            agent_request_data = {k: v for k, v in agent_data.items() if k != "temperature"}
+
             request_data = CompleteAgentRequest(
-                agent=AgentCreateRequest(**agent_data),
+                agent=AgentCreateRequest(**agent_request_data),
                 agent_model_config=ModelConfigRequest(
                     model_provider_id="openai",  # Default provider
                     system_prompt=agent_data.get("system_prompt", ""),
-                    temperature=agent_data.get("model_config", {}).get("temperature", 0.7),
-                    max_tokens=agent_data.get("model_config", {}).get("max_tokens", 4000)
+                    temperature=agent_data.get("temperature", 0.7),
+                    max_tokens=4000  # Default max tokens
                 ) if agent_data.get("system_prompt") else None
             )
 
@@ -128,12 +130,12 @@ class PranthoraApiClient:
                         update_data["agent"][field] = agent_data[field]
 
             # Model config fields
-            if "system_prompt" in agent_data or "model_config" in agent_data:
+            if "system_prompt" in agent_data or "temperature" in agent_data:
                 update_data["agent_model_config"] = {
                     "model_provider_id": "openai",
                     "system_prompt": agent_data.get("system_prompt", ""),
-                    "temperature": agent_data.get("model_config", {}).get("temperature", 0.7),
-                    "max_tokens": agent_data.get("model_config", {}).get("max_tokens", 4000)
+                    "temperature": agent_data.get("temperature", 0.7),
+                    "max_tokens": 4000  # Keep default max tokens
                 }
 
             if not update_data:

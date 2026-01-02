@@ -31,7 +31,7 @@ class UserAgentService(DatabaseService[UserAgent]):
             "user_id": str(user_id),
             "name": data.name,
             "system_prompt": data.system_prompt,
-            "evaluation_criteria": data.evaluation_criteria,
+            "temperature": data.temperature,
             "pranthora_agent_id": None  # Will be set if Pranthora succeeds
         }
 
@@ -43,7 +43,7 @@ class UserAgentService(DatabaseService[UserAgent]):
                     "description": f"User agent: {data.name}",
                     "is_active": True,
                     "system_prompt": data.system_prompt,
-                    "model_config": data.agent_model_config or {}
+                    "temperature": data.temperature
                 })
 
                 # Store Pranthora agent ID in our database
@@ -90,10 +90,19 @@ class UserAgentService(DatabaseService[UserAgent]):
             # Get the agent to check if it has a pranthora_agent_id
             agent_result = await self.get_by_id(agent_id)
             if agent_result and agent_result.get("pranthora_agent_id"):
+                # Prepare data for Pranthora API
+                pranthora_update_data = {
+                    "name": update_data.get("name"),
+                    "system_prompt": update_data.get("system_prompt"),
+                    "temperature": update_data.get("temperature")
+                }
+                # Remove None values
+                pranthora_update_data = {k: v for k, v in pranthora_update_data.items() if v is not None}
+
                 async with PranthoraApiClient() as client:
                     await client.update_agent(
                         agent_result["pranthora_agent_id"],
-                        update_data
+                        pranthora_update_data
                     )
                 logger.info(f"Updated agent in Pranthora: {agent_result['pranthora_agent_id']}")
         except Exception as e:

@@ -124,9 +124,9 @@ class DatabaseService(ABC, Generic[T]):
         try:
             result = await client.delete(self.table_name, {'id': str(record_id)})
             if result:
-                logger.info(f"Deleted record from {self.table_name}: {record_id}")
+                    logger.info(f"Deleted record from {self.table_name}: {record_id}")
             else:
-                logger.warning(f"No record found to delete in {self.table_name}: {record_id}")
+                    logger.warning(f"No record found to delete in {self.table_name}: {record_id}")
             return result
         except Exception as e:
             logger.error(f"Error deleting record from {self.table_name}: {e}")

@@ -4,6 +4,7 @@ Test suite CRUD service.
 This module provides CRUD operations for test suites and related entities.
 """
 
+import json
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 
@@ -45,92 +46,105 @@ class TestSuiteService(DatabaseService[TestSuite]):
 
     async def get_test_suite_with_relations(self, suite_id: UUID) -> Optional[TestSuiteWithRelations]:
         """Get a test suite with all related entities."""
-        pool = await self._get_pool()
-
-        query = """
-            SELECT
-                ts.*,
-                ta.id as target_agent_id, ta.name as target_agent_name,
-                ta.websocket_url, ta.sample_rate, ta.encoding,
-                ua.id as user_agent_id, ua.name as user_agent_name,
-                ua.system_prompt, ua.evaluation_criteria, ua.model_config
-            FROM test_suites ts
-            LEFT JOIN target_agents ta ON ts.target_agent_id = ta.id
-            LEFT JOIN user_agents ua ON ts.user_agent_id = ua.id
-            WHERE ts.id = $1
-        """
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                result = await conn.fetchrow(query, suite_id)
-                if not result:
-                    return None
+            # First get the test suite
+            suite_result = await supabase_client.select(
+                "test_suites",
+                filters={"id": str(suite_id)}
+            )
 
-                # Build the response
-                suite_data = dict(result)
+            if not suite_result or len(suite_result) == 0:
+                return None
 
-                # Extract target agent data
-                target_agent = None
-                if suite_data.get("target_agent_id"):
-                    target_agent = TargetAgent(
-                        id=suite_data["target_agent_id"],
-                        user_id=UUID("00000000-0000-0000-0000-000000000000"),  # Not needed for response
-                        name=suite_data["target_agent_name"],
-                        websocket_url=suite_data["websocket_url"],
-                        sample_rate=suite_data["sample_rate"],
-                        encoding=suite_data["encoding"],
-                        created_at=suite_data["created_at"],  # Will be overridden by suite
-                        updated_at=suite_data["updated_at"]   # Will be overridden by suite
-                    )
+            suite_data = suite_result[0]
 
-                # Extract user agent data
-                user_agent = None
-                if suite_data.get("user_agent_id"):
-                    user_agent = UserAgent(
-                        id=suite_data["user_agent_id"],
-                        user_id=UUID("00000000-0000-0000-0000-000000000000"),  # Not needed for response
-                        name=suite_data["user_agent_name"],
-                        system_prompt=suite_data["system_prompt"],
-                        evaluation_criteria=suite_data["evaluation_criteria"],
-                        model_config=suite_data["model_config"],
-                        created_at=suite_data["created_at"],  # Will be overridden by suite
-                        updated_at=suite_data["updated_at"]   # Will be overridden by suite
-                    )
-
-                # Get test cases
-                test_cases = await self._get_test_cases_for_suite(suite_id)
-
-                return TestSuiteWithRelations(
-                    id=suite_data["id"],
-                    user_id=suite_data["user_id"],
-                    name=suite_data["name"],
-                    description=suite_data["description"],
-                    target_agent_id=suite_data["target_agent_id"],
-                    user_agent_id=suite_data["user_agent_id"],
-                    created_at=suite_data["created_at"],
-                    updated_at=suite_data["updated_at"],
-                    target_agent=target_agent,
-                    user_agent=user_agent,
-                    test_cases=test_cases
+            # Get target agent if exists
+            target_agent = None
+            if suite_data.get('target_agent_id'):
+                target_agent_result = await supabase_client.select(
+                    "target_agents",
+                    filters={"id": suite_data['target_agent_id']}
                 )
+                if target_agent_result and len(target_agent_result) > 0:
+                    ta_data = target_agent_result[0]
+                    target_agent = TargetAgent(
+                        id=ta_data['id'],
+                        user_id=ta_data['user_id'],
+                        name=ta_data['name'],
+                        websocket_url=ta_data['websocket_url'],
+                        sample_rate=ta_data['sample_rate'],
+                        encoding=ta_data['encoding'],
+                        created_at=ta_data['created_at'],
+                        updated_at=ta_data['updated_at']
+                    )
+
+            # Get user agent if exists
+            user_agent = None
+            if suite_data.get('user_agent_id'):
+                user_agent_result = await supabase_client.select(
+                    "user_agents",
+                    filters={"id": suite_data['user_agent_id']}
+                )
+                if user_agent_result and len(user_agent_result) > 0:
+                    ua_data = user_agent_result[0]
+                    # Parse JSON fields
+                    evaluation_criteria = ua_data.get('evaluation_criteria')
+                    if isinstance(evaluation_criteria, str):
+                        evaluation_criteria = json.loads(evaluation_criteria)
+
+                    model_config = ua_data.get('agent_model_config')
+                    if isinstance(model_config, str):
+                        model_config = json.loads(model_config)
+
+                    user_agent = UserAgent(
+                        id=ua_data['id'],
+                        user_id=ua_data['user_id'],
+                        name=ua_data['name'],
+                        system_prompt=ua_data['system_prompt'],
+                        evaluation_criteria=evaluation_criteria,
+                        agent_model_config=model_config,
+                        pranthora_agent_id=ua_data.get('pranthora_agent_id'),
+                        created_at=ua_data['created_at'],
+                        updated_at=ua_data['updated_at']
+                    )
+
+            # Get test cases
+            test_cases = await self._get_test_cases_for_suite(suite_id)
+
+            return TestSuiteWithRelations(
+                id=suite_data['id'],
+                user_id=suite_data['user_id'],
+                name=suite_data['name'],
+                description=suite_data['description'],
+                target_agent_id=suite_data.get('target_agent_id'),
+                user_agent_id=suite_data.get('user_agent_id'),
+                created_at=suite_data['created_at'],
+                updated_at=suite_data['updated_at'],
+                target_agent=target_agent,
+                user_agent=user_agent,
+                test_cases=test_cases
+            )
         except Exception as e:
             logger.error(f"Error getting test suite with relations: {e}")
             raise
 
     async def _get_test_cases_for_suite(self, suite_id: UUID) -> List[TestCase]:
         """Get test cases for a suite."""
-        pool = await self._get_pool()
-
-        query = """
-            SELECT * FROM test_cases
-            WHERE test_suite_id = $1 AND is_active = true
-            ORDER BY order_index, created_at
-        """
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                results = await conn.fetch(query, suite_id)
-                return [TestCase(**dict(row)) for row in results]
+            test_cases_result = await supabase_client.select(
+                "test_cases",
+                filters={"test_suite_id": str(suite_id), "is_active": True},
+                order_by="order_index,created_at"
+            )
+
+            if not test_cases_result:
+                return []
+
+            return [TestCase(**tc_data) for tc_data in test_cases_result]
         except Exception as e:
             logger.error(f"Error getting test cases for suite {suite_id}: {e}")
             return []

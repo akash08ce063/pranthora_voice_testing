@@ -34,21 +34,25 @@ class TestCaseService(DatabaseService[TestCase]):
         self, suite_id: UUID, include_inactive: bool = False, limit: int = 100, offset: int = 0
     ) -> List[TestCase]:
         """Get test cases for a test suite."""
-        pool = await self._get_pool()
-
-        active_filter = "" if include_inactive else "AND is_active = true"
-
-        query = f"""
-            SELECT * FROM test_cases
-            WHERE test_suite_id = $1 {active_filter}
-            ORDER BY order_index, created_at
-            LIMIT $2 OFFSET $3
-        """
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                results = await conn.fetch(query, suite_id, limit, offset)
-                return [TestCase(**dict(row)) for row in results]
+            filters = {"test_suite_id": str(suite_id)}
+            if not include_inactive:
+                filters["is_active"] = True
+
+            results = await supabase_client.select(
+                "test_cases",
+                filters=filters,
+                order_by="order_index,created_at",
+                limit=limit,
+                offset=offset
+            )
+
+            if not results:
+                return []
+
+            return [TestCase(**tc_data) for tc_data in results]
         except Exception as e:
             logger.error(f"Error fetching test cases for suite {suite_id}: {e}")
             raise
@@ -64,18 +68,15 @@ class TestCaseService(DatabaseService[TestCase]):
 
     async def reorder_test_cases(self, suite_id: UUID, case_orders: List[dict]) -> bool:
         """Reorder test cases within a suite."""
-        pool = await self._get_pool()
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                async with conn.transaction():
-                    for case_order in case_orders:
-                        await conn.execute(
-                            "UPDATE test_cases SET order_index = $1 WHERE id = $2 AND test_suite_id = $3",
-                            case_order["order_index"],
-                            case_order["case_id"],
-                            suite_id
-                        )
+            for case_order in case_orders:
+                await supabase_client.update(
+                    "test_cases",
+                    {"id": case_order["case_id"], "test_suite_id": str(suite_id)},
+                    {"order_index": case_order["order_index"]}
+                )
             logger.info(f"Reordered test cases for suite {suite_id}")
             return True
         except Exception as e:
@@ -84,16 +85,19 @@ class TestCaseService(DatabaseService[TestCase]):
 
     async def get_test_case_count(self, suite_id: UUID, include_inactive: bool = False) -> int:
         """Get count of test cases for a suite."""
-        pool = await self._get_pool()
-
-        active_filter = "" if include_inactive else "AND is_active = true"
-
-        query = f"SELECT COUNT(*) FROM test_cases WHERE test_suite_id = $1 {active_filter}"
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                result = await conn.fetchval(query, suite_id)
-                return result or 0
+            filters = {"test_suite_id": str(suite_id)}
+            if not include_inactive:
+                filters["is_active"] = True
+
+            results = await supabase_client.select(
+                "test_cases",
+                filters=filters
+            )
+
+            return len(results) if results else 0
         except Exception as e:
             logger.error(f"Error counting test cases for suite {suite_id}: {e}")
             raise

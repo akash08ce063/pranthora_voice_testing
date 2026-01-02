@@ -91,8 +91,7 @@ class UserAgentBase(BaseModel):
     user_id: UUID = Field(..., description="User ID who owns this user agent")
     name: str = Field(..., min_length=1, max_length=255, description="User agent name")
     system_prompt: str = Field(..., description="System prompt for the agent")
-    evaluation_criteria: Optional[Dict[str, Any]] = Field(None, description="Evaluation criteria")
-    agent_model_config: Optional[Dict[str, Any]] = Field(None, description="Model configuration settings")
+    temperature: float = Field(0.7, ge=0.0, le=2.0, description="Temperature setting for the AI model")
     pranthora_agent_id: Optional[str] = Field(None, description="Corresponding agent ID in Pranthora backend")
 
 
@@ -106,8 +105,7 @@ class UserAgentUpdate(BaseModel):
 
     name: Optional[str] = Field(None, min_length=1, max_length=255, description="User agent name")
     system_prompt: Optional[str] = Field(None, description="System prompt for the agent")
-    evaluation_criteria: Optional[Dict[str, Any]] = Field(None, description="Evaluation criteria")
-    agent_model_config: Optional[Dict[str, Any]] = Field(None, description="Model configuration settings")
+    temperature: Optional[float] = Field(None, ge=0.0, le=2.0, description="Temperature setting for the AI model")
 
 
 class UserAgent(UserAgentBase):
@@ -128,6 +126,8 @@ class TestCaseBase(BaseModel):
     timeout_seconds: int = Field(300, ge=1, description="Timeout in seconds")
     order_index: int = Field(0, ge=0, description="Order index for sorting")
     is_active: bool = Field(True, description="Whether this test case is active")
+    attempts: int = Field(1, ge=1, description="Number of times this test case should retry on failure")
+    default_concurrent_calls: int = Field(1, ge=1, description="Default number of concurrent calls for this test case")
 
 
 class TestCaseCreate(TestCaseBase):
@@ -146,6 +146,8 @@ class TestCaseUpdate(BaseModel):
     timeout_seconds: Optional[int] = Field(None, ge=1, description="Timeout in seconds")
     order_index: Optional[int] = Field(None, ge=0, description="Order index for sorting")
     is_active: Optional[bool] = Field(None, description="Whether this test case is active")
+    attempts: Optional[int] = Field(None, ge=1, description="Number of times this test case should retry on failure")
+    default_concurrent_calls: Optional[int] = Field(None, ge=1, description="Default number of concurrent calls for this test case")
 
 
 class TestCase(TestCaseBase):
@@ -185,6 +187,7 @@ class TestCaseResultBase(BaseModel):
 
     test_run_id: UUID = Field(..., description="ID of the test run this result belongs to")
     test_case_id: UUID = Field(..., description="ID of the test case that was executed")
+    test_suite_id: UUID = Field(..., description="ID of the test suite this result belongs to")
     status: str = Field(..., description="Result status (pass, fail, alert)")
     recording_file_id: Optional[UUID] = Field(None, description="Supabase storage file ID")
     conversation_logs: Optional[List[Dict[str, Any]]] = Field(None, description="Array of conversation turns")

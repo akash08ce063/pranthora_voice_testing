@@ -31,19 +31,21 @@ class TestRunHistoryService(DatabaseService[TestRunHistory]):
         self, suite_id: UUID, limit: int = 100, offset: int = 0
     ) -> List[TestRunHistory]:
         """Get test runs for a test suite."""
-        pool = await self._get_pool()
-
-        query = """
-            SELECT * FROM test_run_history
-            WHERE test_suite_id = $1
-            ORDER BY started_at DESC
-            LIMIT $2 OFFSET $3
-        """
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                results = await conn.fetch(query, suite_id, limit, offset)
-                return [TestRunHistory(**dict(row)) for row in results]
+            results = await supabase_client.select(
+                "test_run_history",
+                filters={"test_suite_id": str(suite_id)},
+                order_by="started_at.desc",
+                limit=limit,
+                offset=offset
+            )
+
+            if not results:
+                return []
+
+            return [TestRunHistory(**result) for result in results]
         except Exception as e:
             logger.error(f"Error fetching test runs for suite {suite_id}: {e}")
             raise
@@ -57,8 +59,6 @@ class TestRunHistoryService(DatabaseService[TestRunHistory]):
 
     async def get_test_run_with_results(self, run_id: UUID) -> Optional[TestRunWithResults]:
         """Get a test run with all its results."""
-        pool = await self._get_pool()
-
         # Get the test run
         test_run = await self.get_test_run(run_id)
         if not test_run:
@@ -89,45 +89,45 @@ class TestCaseResultService(DatabaseService[TestCaseResult]):
 
     async def get_results_by_run(self, run_id: UUID) -> List[TestCaseResult]:
         """Get all results for a test run."""
-        pool = await self._get_pool()
-
-        query = """
-            SELECT * FROM test_case_results
-            WHERE test_run_id = $1
-            ORDER BY started_at
-        """
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                results = await conn.fetch(query, run_id)
-                return [TestCaseResult(**dict(row)) for row in results]
+            results = await supabase_client.select(
+                "test_case_results",
+                filters={"test_run_id": str(run_id)},
+                order_by="started_at"
+            )
+
+            if not results:
+                return []
+
+            return [TestCaseResult(**result) for result in results]
         except Exception as e:
             logger.error(f"Error fetching results for run {run_id}: {e}")
             raise
 
     async def get_results_by_case(self, case_id: UUID, limit: int = 100) -> List[TestCaseResult]:
         """Get results for a specific test case."""
-        pool = await self._get_pool()
-
-        query = """
-            SELECT * FROM test_case_results
-            WHERE test_case_id = $1
-            ORDER BY started_at DESC
-            LIMIT $2
-        """
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                results = await conn.fetch(query, case_id, limit)
-                return [TestCaseResult(**dict(row)) for row in results]
+            results = await supabase_client.select(
+                "test_case_results",
+                filters={"test_case_id": str(case_id)},
+                order_by="started_at.desc",
+                limit=limit
+            )
+
+            if not results:
+                return []
+
+            return [TestCaseResult(**result) for result in results]
         except Exception as e:
             logger.error(f"Error fetching results for case {case_id}: {e}")
             raise
 
     async def get_result_with_alerts(self, result_id: UUID) -> Optional[TestCaseResultWithAlerts]:
         """Get a test case result with all its alerts."""
-        pool = await self._get_pool()
-
         # Get the result
         test_result = await self.get_result(result_id)
         if not test_result:
@@ -158,37 +158,39 @@ class TestAlertService(DatabaseService[TestAlert]):
 
     async def get_alerts_by_result(self, result_id: UUID) -> List[TestAlert]:
         """Get all alerts for a test case result."""
-        pool = await self._get_pool()
-
-        query = """
-            SELECT * FROM test_alerts
-            WHERE test_case_result_id = $1
-            ORDER BY created_at
-        """
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                results = await conn.fetch(query, result_id)
-                return [TestAlert(**dict(row)) for row in results]
+            results = await supabase_client.select(
+                "test_alerts",
+                filters={"test_case_result_id": str(result_id)},
+                order_by="created_at"
+            )
+
+            if not results:
+                return []
+
+            return [TestAlert(**result) for result in results]
         except Exception as e:
             logger.error(f"Error fetching alerts for result {result_id}: {e}")
             raise
 
     async def get_alerts_by_severity(self, severity: str, limit: int = 100) -> List[TestAlert]:
         """Get alerts by severity level."""
-        pool = await self._get_pool()
-
-        query = """
-            SELECT * FROM test_alerts
-            WHERE severity = $1
-            ORDER BY created_at DESC
-            LIMIT $2
-        """
+        supabase_client = await self._get_client()
 
         try:
-            async with pool.acquire() as conn:
-                results = await conn.fetch(query, severity, limit)
-                return [TestAlert(**dict(row)) for row in results]
+            results = await supabase_client.select(
+                "test_alerts",
+                filters={"severity": severity},
+                order_by="created_at.desc",
+                limit=limit
+            )
+
+            if not results:
+                return []
+
+            return [TestAlert(**result) for result in results]
         except Exception as e:
             logger.error(f"Error fetching alerts by severity {severity}: {e}")
             raise

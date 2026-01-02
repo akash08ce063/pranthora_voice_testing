@@ -99,3 +99,67 @@
 2026-01-02 12:17:14 [INFO] logging:emit:1160 [PID:74163] [TID:8470126720] Starting Voice Testing Platform on 0.0.0.0:8080
 2026-01-02 12:17:14 [INFO] logging:emit:1160 [PID:74163] [TID:8470126720] Voice Testing Platform startup
 2026-01-02 12:19:11 [INFO] logging:emit:1160 [PID:74163] [TID:8470126720] Supabase client created successfully
+2026-01-02 12:22:21 [INFO] logging:emit:1160 [PID:79234] [TID:8470126720] Initializing static memory cache...
+2026-01-02 12:22:21 [INFO] logging:emit:1160 [PID:79234] [TID:8470126720] Static memory cache initialized successfully
+2026-01-02 12:22:21 [INFO] logging:emit:1160 [PID:79234] [TID:8470126720] Starting Voice Testing Platform on 0.0.0.0:8080
+2026-01-02 12:22:21 [INFO] logging:emit:1160 [PID:79234] [TID:8470126720] Voice Testing Platform startup
+2026-01-02 12:24:31 [INFO] logging:emit:1160 [PID:79234] [TID:8470126720] Supabase client created successfully
+2026-01-02 12:37:29 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Initializing static memory cache...
+2026-01-02 12:37:29 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Static memory cache initialized successfully
+2026-01-02 12:37:29 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Starting Voice Testing Platform on 0.0.0.0:8080
+2026-01-02 12:37:29 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Voice Testing Platform startup
+2026-01-02 12:37:35 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Supabase client created successfully
+2026-01-02 12:46:35 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Supabase inserting into target_agents: {'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'Test Target Agent', 'websocket_url': 'ws://localhost:5050/api/call/media-stream/agents/b9f92d26-9544-44cb-a5f1-2c756af90fd0', 'sample_rate': 8000, 'encoding': 'mulaw', 'created_at': '2026-01-02T07:16:35.116447', 'updated_at': '2026-01-02T07:16:35.116471'}
+2026-01-02 12:46:35 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Supabase insert result: data=[{'id': 'defa8491-0870-4b5b-a673-62da55ce1138', 'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'Test Target Agent', 'websocket_url': 'ws://localhost:5050/api/call/media-stream/agents/b9f92d26-9544-44cb-a5f1-2c756af90fd0', 'sample_rate': 8000, 'encoding': 'mulaw', 'created_at': '2026-01-02T07:16:35.116447', 'updated_at': '2026-01-02T07:16:35.116471'}] count=None
+2026-01-02 12:46:35 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Supabase insert result.data: [{'id': 'defa8491-0870-4b5b-a673-62da55ce1138', 'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'Test Target Agent', 'websocket_url': 'ws://localhost:5050/api/call/media-stream/agents/b9f92d26-9544-44cb-a5f1-2c756af90fd0', 'sample_rate': 8000, 'encoding': 'mulaw', 'created_at': '2026-01-02T07:16:35.116447', 'updated_at': '2026-01-02T07:16:35.116471'}]
+2026-01-02 12:46:35 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Created record in target_agents: defa8491-0870-4b5b-a673-62da55ce1138
+2026-01-02 12:49:11 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Supabase inserting into target_agents: {'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'test', 'websocket_url': 'ws://localhost:8080', 'sample_rate': 8000, 'encoding': 'mulaw', 'created_at': '2026-01-02T07:19:11.998256', 'updated_at': '2026-01-02T07:19:11.998286'}
+2026-01-02 12:49:12 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Supabase insert result: data=[{'id': '145294aa-3c13-4368-88cb-4e94d40f912a', 'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'test', 'websocket_url': 'ws://localhost:8080', 'sample_rate': 8000, 'encoding': 'mulaw', 'created_at': '2026-01-02T07:19:11.998256', 'updated_at': '2026-01-02T07:19:11.998286'}] count=None
+2026-01-02 12:49:12 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Supabase insert result.data: [{'id': '145294aa-3c13-4368-88cb-4e94d40f912a', 'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'test', 'websocket_url': 'ws://localhost:8080', 'sample_rate': 8000, 'encoding': 'mulaw', 'created_at': '2026-01-02T07:19:11.998256', 'updated_at': '2026-01-02T07:19:11.998286'}]
+2026-01-02 12:49:12 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Created record in target_agents: 145294aa-3c13-4368-88cb-4e94d40f912a
+2026-01-02 12:55:52 [INFO] logging:emit:1160 [PID:92235] [TID:8470126720] Voice Testing Platform shutdown
+2026-01-02 12:55:54 [INFO] logging:emit:1160 [PID:8250] [TID:8470126720] Initializing static memory cache...
+2026-01-02 12:55:54 [INFO] logging:emit:1160 [PID:8250] [TID:8470126720] Static memory cache initialized successfully
+2026-01-02 12:55:54 [INFO] logging:emit:1160 [PID:8250] [TID:8470126720] Starting Voice Testing Platform on 0.0.0.0:8080
+2026-01-02 12:55:54 [INFO] logging:emit:1160 [PID:8250] [TID:8470126720] Voice Testing Platform startup
+2026-01-02 12:56:15 [INFO] logging:emit:1160 [PID:8250] [TID:8470126720] Supabase client created successfully
+2026-01-02 12:56:17 [ERROR] logging:emit:1160 [PID:8250] [TID:8470126720] Error getting test suite with relations: SupabaseClient.select() got an unexpected keyword argument 'single'
+2026-01-02 12:56:18 [ERROR] logging:emit:1160 [PID:8250] [TID:8470126720] Error getting test suite with relations: SupabaseClient.select() got an unexpected keyword argument 'single'
+2026-01-02 12:58:09 [INFO] logging:emit:1160 [PID:10626] [TID:8470126720] Initializing static memory cache...
+2026-01-02 12:58:09 [INFO] logging:emit:1160 [PID:10626] [TID:8470126720] Static memory cache initialized successfully
+2026-01-02 12:58:09 [INFO] logging:emit:1160 [PID:10626] [TID:8470126720] Starting Voice Testing Platform on 0.0.0.0:8080
+2026-01-02 12:58:09 [INFO] logging:emit:1160 [PID:10626] [TID:8470126720] Voice Testing Platform startup
+2026-01-02 12:59:34 [INFO] logging:emit:1160 [PID:10626] [TID:8470126720] Supabase client created successfully
+2026-01-02 13:01:39 [ERROR] logging:emit:1160 [PID:10626] [TID:8470126720] Error updating test_suites: 'AsyncRequestBuilder' object has no attribute 'eq'
+2026-01-02 13:01:39 [WARNING] logging:emit:1160 [PID:10626] [TID:8470126720] No record found to update in test_suites: 89239c3c-9164-4097-b8f1-b30835c1b828
+2026-01-02 13:04:24 [INFO] logging:emit:1160 [PID:15890] [TID:8470126720] Supabase client created successfully
+2026-01-02 13:04:27 [ERROR] logging:emit:1160 [PID:10626] [TID:8470126720] Error updating test_suites: 'AsyncRequestBuilder' object has no attribute 'eq'
+2026-01-02 13:04:27 [WARNING] logging:emit:1160 [PID:10626] [TID:8470126720] No record found to update in test_suites: 89239c3c-9164-4097-b8f1-b30835c1b828
+2026-01-02 13:04:32 [INFO] logging:emit:1160 [PID:10626] [TID:8470126720] Voice Testing Platform shutdown
+2026-01-02 13:04:54 [INFO] logging:emit:1160 [PID:16663] [TID:8470126720] Supabase client created successfully
+2026-01-02 13:05:07 [INFO] logging:emit:1160 [PID:16922] [TID:8470126720] Initializing static memory cache...
+2026-01-02 13:05:07 [INFO] logging:emit:1160 [PID:16922] [TID:8470126720] Static memory cache initialized successfully
+2026-01-02 13:05:07 [INFO] logging:emit:1160 [PID:16922] [TID:8470126720] Starting Voice Testing Platform on 0.0.0.0:8080
+2026-01-02 13:05:07 [INFO] logging:emit:1160 [PID:16922] [TID:8470126720] Voice Testing Platform startup
+2026-01-02 13:06:40 [INFO] logging:emit:1160 [PID:16922] [TID:8470126720] Supabase client created successfully
+2026-01-02 13:07:04 [INFO] logging:emit:1160 [PID:16922] [TID:8470126720] Updated record in test_suites: 89239c3c-9164-4097-b8f1-b30835c1b828
+2026-01-02 13:19:13 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Initializing static memory cache...
+2026-01-02 13:19:13 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Static memory cache initialized successfully
+2026-01-02 13:19:13 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Starting Voice Testing Platform on 0.0.0.0:8080
+2026-01-02 13:19:13 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Voice Testing Platform startup
+2026-01-02 13:29:30 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Supabase client created successfully
+2026-01-02 13:32:23 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Creating agent in Pranthora: tester agent 
+2026-01-02 13:32:23 [ERROR] logging:emit:1160 [PID:29299] [TID:8470126720] Error creating agent in Pranthora: All connection attempts failed
+2026-01-02 13:32:23 [ERROR] logging:emit:1160 [PID:29299] [TID:8470126720] Failed to create agent in Pranthora: All connection attempts failed
+2026-01-02 13:32:23 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Supabase inserting into user_agents: {'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'tester agent ', 'system_prompt': 'hvchs', 'temperature': 0.6, 'pranthora_agent_id': None, 'created_at': '2026-01-02T08:02:23.712173', 'updated_at': '2026-01-02T08:02:23.712183'}
+2026-01-02 13:32:24 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Supabase insert result: data=[{'id': '8de9084a-4972-41bd-94c1-98a4d023fa44', 'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'tester agent ', 'system_prompt': 'hvchs', 'model_config': None, 'created_at': '2026-01-02T08:02:23.712173', 'updated_at': '2026-01-02T08:02:23.712183', 'pranthora_agent_id': None, 'temperature': 0.6}] count=None
+2026-01-02 13:32:24 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Supabase insert result.data: [{'id': '8de9084a-4972-41bd-94c1-98a4d023fa44', 'user_id': '44cc9462-6d84-4bf8-a40c-e331fafbd2f6', 'name': 'tester agent ', 'system_prompt': 'hvchs', 'model_config': None, 'created_at': '2026-01-02T08:02:23.712173', 'updated_at': '2026-01-02T08:02:23.712183', 'pranthora_agent_id': None, 'temperature': 0.6}]
+2026-01-02 13:32:24 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Created record in user_agents: 8de9084a-4972-41bd-94c1-98a4d023fa44
+2026-01-02 13:32:24 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Created agent in local DB: 8de9084a-4972-41bd-94c1-98a4d023fa44
+2026-01-02 13:32:52 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Updated record in test_suites: 0e0af8e3-613c-4444-8a6d-ce5957ad2020
+2026-01-02 13:33:00 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Updated record in test_suites: 0e0af8e3-613c-4444-8a6d-ce5957ad2020
+2026-01-02 14:07:37 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Supabase inserting into test_cases: {'name': 'first test case', 'steps': [{'action': 'speak', 'text': 'Hello, can you help me with my account?'}], 'conditions': [{'type': 'response_contains', 'expected': 'Hello'}], 'expected_outcome': 'bc cd', 'timeout_seconds': 30, 'order_index': 0, 'is_active': True, 'attempts': 3, 'default_concurrent_calls': 1, 'test_suite_id': '0e0af8e3-613c-4444-8a6d-ce5957ad2020', 'created_at': '2026-01-02T08:37:37.699432', 'updated_at': '2026-01-02T08:37:37.699449'}
+2026-01-02 14:07:38 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Supabase insert result: data=[{'id': '9b9f1361-768f-4a61-b5df-5bc65b25044b', 'test_suite_id': '0e0af8e3-613c-4444-8a6d-ce5957ad2020', 'name': 'first test case', 'steps': [{'text': 'Hello, can you help me with my account?', 'action': 'speak'}], 'conditions': [{'type': 'response_contains', 'expected': 'Hello'}], 'expected_outcome': 'bc cd', 'timeout_seconds': 30, 'order_index': 0, 'is_active': True, 'created_at': '2026-01-02T08:37:37.699432', 'updated_at': '2026-01-02T08:37:37.699449', 'attempts': 3, 'default_concurrent_calls': 1}] count=None
+2026-01-02 14:07:38 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Supabase insert result.data: [{'id': '9b9f1361-768f-4a61-b5df-5bc65b25044b', 'test_suite_id': '0e0af8e3-613c-4444-8a6d-ce5957ad2020', 'name': 'first test case', 'steps': [{'text': 'Hello, can you help me with my account?', 'action': 'speak'}], 'conditions': [{'type': 'response_contains', 'expected': 'Hello'}], 'expected_outcome': 'bc cd', 'timeout_seconds': 30, 'order_index': 0, 'is_active': True, 'created_at': '2026-01-02T08:37:37.699432', 'updated_at': '2026-01-02T08:37:37.699449', 'attempts': 3, 'default_concurrent_calls': 1}]
+2026-01-02 14:07:38 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Created record in test_cases: 9b9f1361-768f-4a61-b5df-5bc65b25044b
+2026-01-02 14:12:55 [INFO] logging:emit:1160 [PID:29299] [TID:8470126720] Voice Testing Platform shutdown
