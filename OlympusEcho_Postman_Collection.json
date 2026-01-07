@@ -1,0 +1,948 @@
+{
+  "info": {
+    "name": "Olympus Echo Backend API",
+    "description": "Complete API collection for Olympus Echo Backend - Voice Agent Testing Platform. IMPORTANT: Set environment variables (target_agent_id, user_agent_id, test_suite_id, etc.) with actual UUID values from API responses after creating resources.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "olympus-echo"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": ["{{base_url}}"],
+          "path": [""]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Test Execution",
+      "item": [
+        {
+          "name": "Run Test Suite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"concurrent_calls\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/test-execution/run-suite/{{test_suite_id}}?user_id={{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "test-execution",
+                "run-suite",
+                "{{test_suite_id}}"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            },
+            "description": "Start execution of all active test cases in a test suite"
+          },
+          "response": []
+        },
+        {
+          "name": "Run Single Test Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"concurrent_calls\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/test-execution/run-case/{{test_case_id}}?user_id={{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "test-execution",
+                "run-case",
+                "{{test_case_id}}"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            },
+            "description": "Start execution of a single test case"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Run Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-execution/status/{{test_run_id}}?user_id={{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "test-execution",
+                "status",
+                "{{test_run_id}}"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            },
+            "description": "Get the status and results of a test run"
+          },
+          "response": []
+        },
+        {
+          "name": "List Test Runs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-execution/runs?user_id={{user_id}}&limit=10&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "test-execution",
+                "runs"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "List all test runs for a user"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for executing test cases and test suites"
+    },
+    {
+      "name": "Target Agents",
+      "item": [
+        {
+          "name": "Create Target Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"name\": \"{{target_agent_name}}\",\n  \"websocket_url\": \"{{target_agent_ws_url}}\",\n  \"sample_rate\": 8000,\n  \"encoding\": \"mulaw\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/target-agents",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "target-agents"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Target Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/target-agents?user_id={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "target-agents"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Target Agent by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/target-agents/{{target_agent_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "target-agents", "{{target_agent_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Target Agent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Target Agent\",\n  \"websocket_url\": \"ws://updated-url.com\",\n  \"sample_rate\": 16000,\n  \"encoding\": \"pcm_16\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/target-agents/{{target_agent_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "target-agents", "{{target_agent_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Target Agent",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/target-agents/{{target_agent_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "target-agents", "{{target_agent_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Agents",
+      "item": [
+        {
+          "name": "Create User Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"name\": \"{{user_agent_name}}\",\n  \"system_prompt\": \"{{user_agent_prompt}}\",\n  \"temperature\": 0.7\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/user-agents",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "user-agents"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/user-agents?user_id={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "user-agents"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Agent by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/user-agents/{{user_agent_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "user-agents", "{{user_agent_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Agent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User Agent\",\n  \"system_prompt\": \"Updated system prompt\",\n  \"temperature\": 0.8\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/user-agents/{{user_agent_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "user-agents", "{{user_agent_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User Agent",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/user-agents/{{user_agent_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "user-agents", "{{user_agent_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Test Suites",
+      "item": [
+        {
+          "name": "Create Test Suite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"name\": \"{{test_suite_name}}\",\n  \"description\": \"{{test_suite_desc}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/test-suites?user_id={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-suites"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Suites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-suites?user_id={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-suites"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Suite by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-suites/{{test_suite_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-suites", "{{test_suite_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Suite with Relations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-suites/{{test_suite_id}}/details",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-suites", "{{test_suite_id}}", "details"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Test Suite",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test Suite\",\n  \"description\": \"Updated description\",\n  \"target_agent_id\": \"{{target_agent_id}}\",\n  \"user_agent_id\": \"{{user_agent_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/test-suites/{{test_suite_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-suites", "{{test_suite_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Test Suite",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-suites/{{test_suite_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-suites", "{{test_suite_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Test Cases",
+      "item": [
+        {
+          "name": "Create Test Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_suite_id\": \"{{test_suite_id}}\",\n  \"name\": \"{{test_case_name}}\",\n  \"goals\": [\n    {\n      \"action\": \"speak\",\n      \"text\": \"Hello, can you help me with my account?\"\n    }\n  ],\n  \"evaluation_criteria\": [\n    {\n      \"type\": \"response_contains\",\n      \"expected\": \"Hello\"\n    }\n  ],\n  \"timeout_seconds\": 30,\n  \"order_index\": 0,\n  \"is_active\": true,\n  \"attempts\": 3,\n  \"default_concurrent_calls\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/test-cases",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-cases"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Cases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-cases?test_suite_id={{test_suite_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-cases"],
+              "query": [
+                {
+                  "key": "test_suite_id",
+                  "value": "{{test_suite_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Case by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-cases/{{test_case_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-cases", "{{test_case_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Test Case",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test Case\",\n  \"attempts\": 5,\n  \"default_concurrent_calls\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/test-cases/{{test_case_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-cases", "{{test_case_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Test Case",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-cases/{{test_case_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-cases", "{{test_case_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Test History",
+      "item": [
+        {
+          "name": "List Test Runs by User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/runs?user_id={{user_id}}&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "runs"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "List test runs for a specific user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Run by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/runs/{{test_run_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "runs", "{{test_run_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Run with Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/runs/{{test_run_id}}/details",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "runs", "{{test_run_id}}", "details"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Test Runs by Suite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/runs?suite_id={{test_suite_id}}&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "runs"],
+              "query": [
+                {
+                  "key": "suite_id",
+                  "value": "{{test_suite_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "List test runs for a specific test suite"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Case Result by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/results/{{test_result_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "results", "{{test_result_id}}"]
+            },
+            "description": "Get detailed information about a specific test case result"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Case Result with Alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/results/{{test_result_id}}/details",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "results", "{{test_result_id}}", "details"]
+            },
+            "description": "Get a test case result with all associated alerts"
+          },
+          "response": []
+        },
+        {
+          "name": "List Test Case Results by Run",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/results?run_id={{test_run_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "results"],
+              "query": [
+                {
+                  "key": "run_id",
+                  "value": "{{test_run_id}}"
+                }
+              ]
+            },
+            "description": "List all test case results for a specific test run"
+          },
+          "response": []
+        },
+        {
+          "name": "List Test Case Results by Case",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/results?case_id={{test_case_id}}&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "results"],
+              "query": [
+                {
+                  "key": "case_id",
+                  "value": "{{test_case_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "List test case results for a specific test case"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Test Alert by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/alerts/{{test_alert_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "alerts", "{{test_alert_id}}"]
+            },
+            "description": "Get detailed information about a specific test alert"
+          },
+          "response": []
+        },
+        {
+          "name": "List Test Alerts by Result",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/alerts?result_id={{test_result_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "alerts"],
+              "query": [
+                {
+                  "key": "result_id",
+                  "value": "{{test_result_id}}"
+                }
+              ]
+            },
+            "description": "List all alerts for a specific test case result"
+          },
+          "response": []
+        },
+        {
+          "name": "List Test Alerts by Severity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/test-history/alerts?severity=high&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "test-history", "alerts"],
+              "query": [
+                {
+                  "key": "severity",
+                  "value": "high"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "List test alerts filtered by severity level"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scaled Testing",
+      "item": [
+        {
+          "name": "Twilio Media Stream Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_agent_uri\": \"{{web_test_target_uri}}\",\n  \"user_agent_id\": \"{{web_test_user_agent_id}}\",\n  \"concurrent_requests\": {{web_test_concurrent}},\n  \"timeout\": {{web_test_timeout}},\n  \"ws_url_base\": \"{{web_test_ws_base}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/twilio-test",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "twilio-test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Web Media Stream Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_agent_uri\": \"{{web_test_target_uri}}\",\n  \"user_agent_id\": \"{{web_test_user_agent_id}}\",\n  \"concurrent_requests\": {{web_test_concurrent}},\n  \"timeout\": {{web_test_timeout}},\n  \"ws_url_base\": \"{{web_test_ws_base}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/web-test",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "web-test"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "31b6d051-7619-4f1b-8646-34c6016c30f3",
+      "type": "string"
+    },
+    {
+      "key": "target_agent_name",
+      "value": "Test Target Agent",
+      "type": "string"
+    },
+    {
+      "key": "target_agent_ws_url",
+      "value": "ws://localhost:5050/api/call/media-stream/agents/b9f92d26-9544-44cb-a5f1-2c756af90fd0",
+      "type": "string"
+    },
+    {
+      "key": "user_agent_name",
+      "value": "Test User Agent",
+      "type": "string"
+    },
+    {
+      "key": "user_agent_prompt",
+      "value": "You are a helpful customer service agent. Be friendly and professional.",
+      "type": "string"
+    },
+    {
+      "key": "target_agent_id",
+      "value": "target-agent-uuid-here",
+      "type": "string"
+    },
+    {
+      "key": "user_agent_id",
+      "value": "user-agent-uuid-here",
+      "type": "string"
+    },
+    {
+      "key": "test_suite_id",
+      "value": "test-suite-uuid-here",
+      "type": "string"
+    },
+    {
+      "key": "test_case_id",
+      "value": "test-case-uuid-here",
+      "type": "string"
+    },
+    {
+      "key": "test_run_id",
+      "value": "test-run-uuid-here",
+      "type": "string"
+    },
+    {
+      "key": "test_suite_name",
+      "value": "Voice Agent Test Suite",
+      "type": "string"
+    },
+    {
+      "key": "test_suite_desc",
+      "value": "Testing voice agent interactions and responses",
+      "type": "string"
+    },
+    {
+      "key": "test_case_name",
+      "value": "Basic Greeting Test",
+      "type": "string"
+    },
+    {
+      "key": "web_test_target_uri",
+      "value": "ws://localhost:5050/api/call/media-stream/agents/b9f92d26-9544-44cb-a5f1-2c756af90fd0",
+      "type": "string"
+    },
+    {
+      "key": "web_test_user_agent_id",
+      "value": "user-agent-uuid-here",
+      "type": "string"
+    },
+    {
+      "key": "web_test_concurrent",
+      "value": "3",
+      "type": "string"
+    },
+    {
+      "key": "web_test_timeout",
+      "value": "30",
+      "type": "string"
+    },
+    {
+      "key": "web_test_ws_base",
+      "value": "ws://localhost:5050",
+      "type": "string"
+    },
+    {
+      "key": "test_run_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "string"
+    },
+    {
+      "key": "test_result_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "string"
+    },
+    {
+      "key": "test_alert_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "string"
+    }
+  ]
+}
