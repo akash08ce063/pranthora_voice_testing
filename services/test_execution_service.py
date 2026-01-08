@@ -326,6 +326,10 @@ class TestExecutionService:
             # Check if test case result already exists for this test run and test case
             existing_result = await self.test_result_service.get_result_by_test_run_and_case(test_run_id, test_case.id)
 
+            # Get wav_file_ids from conversation result
+            wav_file_ids = conversation_result.get("wav_file_ids", [])
+            concurrent_calls_count = conversation_result.get("concurrent_calls", 1)
+
             if existing_result:
                 # Update existing test case result with final status and recording URL
                 update_data = {
@@ -334,13 +338,24 @@ class TestExecutionService:
                     "error_message": conversation_result.get("error_message")
                 }
 
-                # Add recording URL if available (from combined recording at suite level)
+                # Add recording URL if available (from first recording for backward compatibility)
                 if conversation_result.get("recording_file_url"):
                     update_data["recording_file_url"] = conversation_result["recording_file_url"]
 
+                # Add wav_file_ids and concurrent_calls if available
+                if wav_file_ids:
+                    try:
+                        update_data["wav_file_ids"] = wav_file_ids
+                        update_data["concurrent_calls"] = concurrent_calls_count
+                        if len(wav_file_ids) == 1:
+                            # For backward compatibility, also set single recording_file_id
+                            update_data["recording_file_id"] = wav_file_ids[0]
+                    except Exception as e:
+                        logger.warning(f"Could not update wav_file_ids: {e}")
+
                 success = await self.test_result_service.update(existing_result.id, update_data)
                 result_id = existing_result.id
-                logger.info(f"Updated existing test case result {result_id} with status {status}")
+                logger.info(f"Updated existing test case result {result_id} with status {status}, {len(wav_file_ids)} recording file(s)")
             else:
                 # Create new test case result (fallback)
                 result_data = {
@@ -357,8 +372,19 @@ class TestExecutionService:
                 if conversation_result.get("recording_file_url"):
                     result_data["recording_file_url"] = conversation_result["recording_file_url"]
 
+                # Add wav_file_ids and concurrent_calls if available
+                if wav_file_ids:
+                    try:
+                        result_data["wav_file_ids"] = wav_file_ids
+                        result_data["concurrent_calls"] = concurrent_calls_count
+                        if len(wav_file_ids) == 1:
+                            # For backward compatibility, also set single recording_file_id
+                            result_data["recording_file_id"] = wav_file_ids[0]
+                    except Exception as e:
+                        logger.warning(f"Could not set wav_file_ids: {e}")
+
                 result_id = await self.test_result_service.create(result_data)
-                logger.info(f"Created new test case result {result_id} with status {status}")
+                logger.info(f"Created new test case result {result_id} with status {status}, {len(wav_file_ids)} recording file(s)")
 
             return {
                 "result_id": result_id,
@@ -439,12 +465,13 @@ class TestExecutionService:
             # Wait for all conversations to complete
             conversation_results = await asyncio.gather(*conversation_tasks, return_exceptions=True)
 
-            # Process results
+            # Process results and create individual WAV files for each call
             all_conversation_logs = []
             all_audio_data = bytearray()
             total_duration = 0
             successful_calls = 0
             failed_calls = 0
+            wav_file_ids = []
 
             for i, result in enumerate(conversation_results):
                 if isinstance(result, Exception):
@@ -454,61 +481,69 @@ class TestExecutionService:
 
                 if result.get("success"):
                     successful_calls += 1
+                    call_number = result.get("call_number", i + 1)
                     all_conversation_logs.extend(result.get("conversation_logs", []))
                     all_audio_data.extend(result.get("audio_data", b""))
                     total_duration = max(total_duration, result.get("duration_seconds", 0))
+
+                    # Create individual WAV file for this call
+                    pcm_frames = result.get("pcm_frames", b"")
+                    logger.info(f"[Call {call_number}] PCM frames: {len(pcm_frames)} bytes")
+                    if pcm_frames:
+                        try:
+                            # Create WAV file data in memory
+                            wav_buffer = io.BytesIO()
+                            with wave.open(wav_buffer, 'wb') as wf:
+                                wf.setnchannels(1)      # Mono
+                                wf.setsampwidth(2)      # 16-bit PCM
+                                wf.setframerate(self.sample_rate)
+                                wf.writeframes(pcm_frames)
+
+                            wav_data = wav_buffer.getvalue()
+                            # Fixed format: test_case_{test_case.id}_call_{index}_recording.wav
+                            wav_filename = f"test_case_{test_case.id}_call_{call_number}_recording.wav"
+
+                            # Upload individual WAV file to Supabase
+                            wav_file_id = await self.recording_service.upload_recording_file(
+                                file_content=wav_data,
+                                file_name=wav_filename,
+                                content_type="audio/wav"
+                            )
+
+                            if wav_file_id:
+                                wav_file_ids.append(str(wav_file_id))
+                                logger.info(f"📤 Uploaded WAV file for call {call_number}: {wav_file_id}_{wav_filename}")
+                            else:
+                                logger.error(f"Failed to upload WAV file for call {call_number}")
+
+                        except Exception as e:
+                            logger.error(f"Failed to create/upload WAV file for call {call_number}: {e}")
                 else:
                     failed_calls += 1
                     logger.error(f"Conversation {i+1} failed: {result.get('error_message', 'Unknown error')}")
 
             duration_seconds = time.time() - start_time
 
-            # Create combined WAV file from all conversations
+            # Generate signed URL for first file (backward compatibility)
             recording_file_url = None
-            if all_audio_data:
+            if wav_file_ids:
                 try:
-                    # Convert combined μ-law audio to PCM
-                    combined_pcm = audioop.ulaw2lin(bytes(all_audio_data), 2)  # 16-bit PCM
-
-                    # Create WAV file data in memory
-                    wav_buffer = io.BytesIO()
-                    with wave.open(wav_buffer, 'wb') as wf:
-                        wf.setnchannels(1)      # Mono
-                        wf.setsampwidth(2)      # 16-bit PCM
-                        wf.setframerate(self.sample_rate)
-                        wf.writeframes(combined_pcm)
-
-                    wav_data = wav_buffer.getvalue()
-                    wav_filename = f"test_case_{test_case.id}_call_1_recording.wav"
-
-                    # Upload combined WAV file to Supabase
-                    wav_file_id = await self.recording_service.upload_recording_file(
-                        file_content=wav_data,
-                        file_name=wav_filename,
-                        content_type="audio/wav"
-                    )
-
-                    if wav_file_id:
-                        # Generate signed URL immediately after upload
-                        from data_layer.supabase_client import get_supabase_client
-                        supabase_client = await get_supabase_client()
-                        file_path = f"{wav_file_id}_{wav_filename}"
-                        recording_file_url = await supabase_client.create_signed_url("recording_files", file_path, 3600)
-
-                        if recording_file_url:
-                            logger.info(f"📤 Combined WAV file uploaded and URL generated: {file_path}")
-                        else:
-                            logger.error("Failed to generate signed URL for combined WAV file")
-                    else:
-                        logger.error("Failed to upload combined WAV file")
-
+                    from data_layer.supabase_client import get_supabase_client
+                    supabase_client = await get_supabase_client()
+                    first_file_id = wav_file_ids[0]
+                    first_filename = f"test_case_{test_case.id}_call_1_recording.wav"
+                    file_path = f"{first_file_id}_{first_filename}"
+                    recording_file_url = await supabase_client.create_signed_url("recording_files", file_path, 3600)
+                    if recording_file_url:
+                        logger.info(f"📤 Generated signed URL for first recording: {file_path}")
                 except Exception as e:
-                    logger.error(f"Failed to create/upload combined WAV file: {e}")
+                    logger.error(f"Failed to generate signed URL: {e}")
 
             logger.info(
                 f"All conversations completed: {successful_calls}/{concurrent_calls} successful, "
                 f"{failed_calls} failed, {len(all_conversation_logs)} total turns, "
-                f"{len(all_audio_data)} bytes combined audio, {duration_seconds:.2f}s total duration"
+                f"{len(all_audio_data)} bytes combined audio, {duration_seconds:.2f}s total duration, "
+                f"{len(wav_file_ids)} WAV files created: {wav_file_ids}"
             )
 
             return {
@@ -520,7 +555,8 @@ class TestExecutionService:
                 "concurrent_calls": concurrent_calls,
                 "successful_calls": successful_calls,
                 "failed_calls": failed_calls,
-                "recording_file_url": recording_file_url,  # Signed URL for the combined recording
+                "recording_file_url": recording_file_url,  # Signed URL for first recording (backward compatibility)
+                "wav_file_ids": wav_file_ids,  # List of file IDs for all concurrent calls
                 "success": successful_calls > 0,
                 "error_message": f"{failed_calls} out of {concurrent_calls} calls failed" if failed_calls > 0 else None
             }
@@ -698,16 +734,15 @@ class TestExecutionService:
                 return {
                     "conversation_logs": conversation_logs,
                     "audio_data": b"",
+                    "pcm_frames": b"",  # Include pcm_frames for consistency
                     "combined_audio_bytes": 0,
                     "error_message": error_message,
+                    "call_number": call_number,
                     "success": False
                 }
 
             conv_duration = time.time() - conv_start_time
             audio_data = bytes(combined_audio_data)
-
-            # Don't create individual WAV files - only combined file will be created
-            # in the parent _simulate_conversation function
 
             logger.info(
                 f"[Call {call_number}] Isolated conversation completed: {len(conversation_logs)} turns, "
@@ -717,6 +752,7 @@ class TestExecutionService:
             return {
                 "conversation_logs": conversation_logs,
                 "audio_data": audio_data,
+                "pcm_frames": bytes(isolated_pcm_frames),  # Return PCM frames for individual WAV creation
                 "combined_audio_bytes": len(audio_data),
                 "audio_format": "mulaw 8kHz",
                 "duration_seconds": conv_duration,
@@ -730,8 +766,10 @@ class TestExecutionService:
             return {
                 "conversation_logs": [],
                 "audio_data": b"",
+                "pcm_frames": b"",  # Include pcm_frames for consistency
                 "combined_audio_bytes": 0,
                 "error_message": str(e),
+                "call_number": call_number,
                 "success": False
             }
 

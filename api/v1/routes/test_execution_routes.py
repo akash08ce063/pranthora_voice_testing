@@ -439,20 +439,23 @@ async def get_call_logs_by_request_id(
 async def get_recording_url(
     result_id: UUID,
     user_id: UUID = Query(..., description="User ID for authorization"),
+    call_number: int = Query(None, description="Call number for concurrent calls (1-indexed)"),
 ):
     """
-    Get a signed URL for the recording file of a test case result.
+    Get signed URL(s) for the recording file(s) of a test case result.
 
     Args:
         result_id: Test case result ID
         user_id: User ID for authorization
+        call_number: Optional call number for concurrent calls (1-indexed). If not provided, returns all recordings.
 
     Returns:
-        Signed URL to download/play the recording
+        Signed URL(s) to download/play the recording(s)
     """
     try:
         from services.test_history_service import TestCaseResultService, TestRunHistoryService
         from services.recording_storage_service import RecordingStorageService
+        from data_layer.supabase_client import get_supabase_client
 
         result_service = TestCaseResultService()
         run_service = TestRunHistoryService()
@@ -469,15 +472,58 @@ async def get_recording_url(
             if not test_run or test_run.user_id != user_id:
                 raise HTTPException(status_code=403, detail="You don't have permission to access this recording")
 
-            # Get recording URL directly from database (now stored as JSON)
-            recording_file_url = result.get('recording_file_url')
+            test_case_id = result.get('test_case_id')
+            wav_file_ids = result.get('wav_file_ids', [])
+            concurrent_calls = result.get('concurrent_calls', 1)
+            supabase_client = await get_supabase_client()
 
+            # If we have wav_file_ids, generate URLs for all/specific calls
+            if wav_file_ids and len(wav_file_ids) > 0:
+                recording_urls = []
+
+                for idx, file_id in enumerate(wav_file_ids):
+                    call_num = idx + 1
+                    # Skip if specific call_number requested and this isn't it
+                    if call_number is not None and call_num != call_number:
+                        continue
+
+                    # Fixed format: test_case_{test_case_id}_call_{call_number}_recording.wav
+                    file_name = f"test_case_{test_case_id}_call_{call_num}_recording.wav"
+                    file_path = f"{file_id}_{file_name}"
+
+                    try:
+                        signed_url = await supabase_client.create_signed_url("recording_files", file_path, 3600)
+                        if signed_url:
+                            recording_urls.append({
+                                "call_number": call_num,
+                                "recording_url": signed_url,
+                                "file_id": file_id
+                            })
+                    except Exception as e:
+                        logger.warning(f"Failed to generate URL for call {call_num}: {e}")
+
+                if not recording_urls:
+                    raise HTTPException(status_code=404, detail="No recording files found for this test result")
+
+                return {
+                    "result_id": str(result_id),
+                    "test_case_id": str(test_case_id),
+                    "concurrent_calls": concurrent_calls,
+                    "recordings": recording_urls,
+                    "recording_url": recording_urls[0]["recording_url"] if recording_urls else None,  # Backward compat
+                    "expires_in": 3600
+                }
+
+            # Fallback to legacy single recording_file_url
+            recording_file_url = result.get('recording_file_url')
             if not recording_file_url:
                 raise HTTPException(status_code=404, detail="No recording file found for this test result")
 
             return {
                 "result_id": str(result_id),
-                "test_case_id": str(result.get('test_case_id')),
+                "test_case_id": str(test_case_id),
+                "concurrent_calls": 1,
+                "recordings": [{"call_number": 1, "recording_url": recording_file_url}],
                 "recording_url": recording_file_url,
                 "expires_in": 3600
             }
@@ -498,12 +544,13 @@ async def get_recordings_by_suite(
     suite_id: UUID,
     user_id: UUID = Query(..., description="User ID for authorization"),
 ):
-    """Get all recording URLs for a test suite."""
+    """Get all recording URLs for a test suite, including all concurrent call recordings."""
     try:
         from services.test_suite_service import TestSuiteService
         from services.recording_storage_service import RecordingStorageService
         from supabase.client import acreate_client
         from static_memory_cache import StaticMemoryCache
+        from data_layer.supabase_client import get_supabase_client
 
         suite_service = TestSuiteService()
         recording_service = RecordingStorageService()
@@ -517,17 +564,55 @@ async def get_recordings_by_suite(
             # Get all results for this suite directly
             db_config = StaticMemoryCache.get_database_config()
             client = await acreate_client(db_config["supabase_url"], db_config["supabase_key"])
+            supabase_client = await get_supabase_client()
             
             results = await client.table('test_case_results').select(
-                'id, test_case_id, recording_file_url, status, test_run_id'
+                'id, test_case_id, recording_file_url, status, test_run_id, wav_file_ids, concurrent_calls'
             ).eq('test_suite_id', str(suite_id)).order('created_at', desc=True).execute()
 
             recordings = []
             for r in results.data or []:
-                if r.get('recording_file_url'):
+                test_case_id = r['test_case_id']
+                wav_file_ids = r.get('wav_file_ids', [])
+                concurrent_calls = r.get('concurrent_calls', 1)
+
+                # If we have wav_file_ids, generate URLs for all calls
+                if wav_file_ids and len(wav_file_ids) > 0:
+                    call_recordings = []
+                    for idx, file_id in enumerate(wav_file_ids):
+                        call_num = idx + 1
+                        # Fixed format: test_case_{test_case_id}_call_{call_number}_recording.wav
+                        file_name = f"test_case_{test_case_id}_call_{call_num}_recording.wav"
+                        file_path = f"{file_id}_{file_name}"
+
+                        try:
+                            signed_url = await supabase_client.create_signed_url("recording_files", file_path, 3600)
+                            if signed_url:
+                                call_recordings.append({
+                                    "call_number": call_num,
+                                    "recording_url": signed_url,
+                                    "file_id": file_id
+                                })
+                        except Exception as e:
+                            logger.warning(f"Failed to generate URL for call {call_num}: {e}")
+
+                    if call_recordings:
+                        recordings.append({
+                            "result_id": r['id'],
+                            "test_case_id": test_case_id,
+                            "concurrent_calls": concurrent_calls,
+                            "call_recordings": call_recordings,
+                            "recording_url": call_recordings[0]["recording_url"],  # Backward compat
+                            "status": r['status'],
+                            "run_id": r.get('test_run_id')
+                        })
+                elif r.get('recording_file_url'):
+                    # Fallback to legacy single recording_file_url
                     recordings.append({
                         "result_id": r['id'],
-                        "test_case_id": r['test_case_id'],
+                        "test_case_id": test_case_id,
+                        "concurrent_calls": 1,
+                        "call_recordings": [{"call_number": 1, "recording_url": r['recording_file_url']}],
                         "recording_url": r['recording_file_url'],
                         "status": r['status'],
                         "run_id": r.get('test_run_id')
